@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --text-main: #131313;
+  --bg-page: #ffffff;
+  --brand-primary: #d90f0f;
+  --brand-secondary: #b00c0c;
+  --muted: #666666;
+
+  font-family:
+    'Nunito',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text-main);
+  background-color: var(--bg-page);
+}
+
+a {
+  text-decoration: none;
+}
+
+.reviews-marquee-row {
+  overflow: hidden;
+}
+
+.reviews-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  padding: 0 8px;
+}
+
+.reviews-card {
+  width: 340px;
+  flex: 0 0 340px;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(13, 22, 39, 0.05);
+}
+
+.reviews-marquee-left {
+  animation: reviewsMarqueeLeft 36s linear infinite;
+}
+
+.reviews-marquee-right {
+  animation: reviewsMarqueeRight 38s linear infinite;
+}
+
+@keyframes reviewsMarqueeLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - 8px));
+  }
+}
+
+@keyframes reviewsMarqueeRight {
+  0% {
+    transform: translateX(calc(-50% - 8px));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .reviews-card {
+    width: 280px;
+    flex-basis: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviews-marquee-left,
+  .reviews-marquee-right {
+    animation: none;
+  }
+}
