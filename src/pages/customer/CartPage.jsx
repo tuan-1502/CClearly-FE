@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   ShoppingCart,
   Glasses,
@@ -32,12 +32,52 @@ const CartPage = () => {
   const removeCartItem = useRemoveCartItem();
   const clearCart = useClearCart();
 
-  // Get prescriptions from sessionStorage
   const [prescriptions, setPrescriptions] = useState({});
   const [expandedRx, setExpandedRx] = useState({});
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const cart_temp = cartData?.data || cartData;
   const items_temp = cart_temp?.items || [];
+
+  // Restore or initialize selectedIds
+  useEffect(() => {
+    const savedSelected = sessionStorage.getItem('selectedCartItemIds');
+    if (savedSelected && items_temp.length > 0) {
+      try {
+        const parsed = JSON.parse(savedSelected);
+        const validIds = parsed.filter(id => items_temp.some(item => item.cartItemId === id));
+        setSelectedIds(validIds);
+      } catch {
+        setSelectedIds(items_temp.map(item => item.cartItemId));
+      }
+    } else if (items_temp.length > 0 && selectedIds.length === 0) {
+      const allIds = items_temp.map(item => item.cartItemId);
+      setSelectedIds(allIds);
+      sessionStorage.setItem('selectedCartItemIds', JSON.stringify(allIds));
+    }
+  }, [items_temp]);
+
+  const items = items_temp;
+  const selectedItems = items.filter(item => selectedIds.includes(item.cartItemId));
+  const subtotal = selectedItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id];
+      sessionStorage.setItem('selectedCartItemIds', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allIds = items.map(item => item.cartItemId);
+    const next = selectedIds.length === allIds.length ? [] : allIds;
+    setSelectedIds(next);
+    sessionStorage.setItem('selectedCartItemIds', JSON.stringify(next));
+  };
 
   useEffect(() => {
     const saved = sessionStorage.getItem('cartPrescriptions');
@@ -48,7 +88,7 @@ const CartPage = () => {
         /* ignore */
       }
     }
-  }, [items_temp]);
+  }, [items]);
 
   const getRx = (item) =>
     prescriptions[item.variantId] || prescriptions[item.cartItemId] || null;
@@ -67,13 +107,6 @@ const CartPage = () => {
       await clearCart.mutateAsync();
     }
   };
-
-  const cart = cartData?.data || cartData;
-  const items = cart?.items || [];
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
 
   // Fetch shipping config from server (same as CheckoutPage)
   const { data: shippingConfigData } = useQuery({
@@ -213,7 +246,32 @@ const CartPage = () => {
           <h1 className="text-4xl font-bold text-[#222] tracking-[-0.02em]">
             Giỏ hàng
           </h1>
-          <p className="text-[#4f5562] mt-2">{items.length} sản phẩm</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+            <p className="text-[#4f5562]">Bạn có {items.length} sản phẩm trong giỏ hàng</p>
+            {items.length > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition">
+                <div
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${selectedIds.length === items.length && items.length > 0
+                      ? 'bg-[#d90f0f] border-[#d90f0f]'
+                      : 'border-gray-300 bg-white'
+                    }`}
+                >
+                  {selectedIds.length === items.length && items.length > 0 && (
+                    <Check size={14} className="text-white" strokeWidth={3} />
+                  )}
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={selectedIds.length === items.length}
+                  onChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium text-[#4f5562]">
+                  Chọn tất cả ({selectedIds.length}/{items.length})
+                </span>
+              </label>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -225,175 +283,201 @@ const CartPage = () => {
               const isExpanded = expandedRx[rxKey];
 
               return (
-              <div
-                key={item.cartItemId}
-                className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(13,22,39,0.06)] overflow-hidden"
-              >
-                <div className="p-5 flex gap-5">
-                {/* Image */}
-                <div className="w-28 h-28 bg-[#f3f3f3] rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.productName}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
-                  ) : (
-                    <Glasses className="w-10 h-10 text-gray-400" />
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1">
-                  <h3 className="font-semibold text-[#222]">
-                    {item.productName}
-                  </h3>
-                  {item.colorName && (
-                    <p className="text-sm text-[#4f5562] mt-0.5">
-                      Màu: {item.colorName}
-                    </p>
-                  )}
-                  {item.refractiveIndex && (
-                    <p className="text-sm text-[#4f5562] mt-0.5">
-                      Chiết suất: {item.refractiveIndex}
-                    </p>
-                  )}
-                  {item.variantSku && (
-                    <p className="text-xs text-[#4f5562] mt-0.5">
-                      SKU: {item.variantSku}
-                    </p>
-                  )}
-                  <p className="text-[#d90f0f] font-bold mt-1">
-                    {formatCurrency(item.price)}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                  {item.isPreorder && (
-                    <span className="inline-block text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                      Đặt trước
-                    </span>
-                  )}
-                  {rx && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                      <Check size={10} /> Có đơn kính
-                    </span>
-                  )}
-                  </div>
-
-                  {/* Quantity & Remove */}
-                  <div className="flex items-center gap-4 mt-4">
-                    <div className="flex items-center border-2 border-[#e0e0e0] rounded-full">
-                      <button
-                        onClick={() =>
-                          handleQuantityChange(
-                            item.cartItemId,
-                            item.quantity - 1
-                          )
-                        }
-                        className="px-4 py-2 hover:bg-[#f3f3f3] rounded-l-full transition"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="px-4 font-medium text-[#222]">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleQuantityChange(
-                            item.cartItemId,
-                            item.quantity + 1
-                          )
-                        }
-                        className="px-4 py-2 hover:bg-[#f3f3f3] rounded-r-full transition"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                <div
+                  key={item.cartItemId}
+                  className={`bg-white rounded-2xl shadow-[0_10px_30px_rgba(13,22,39,0.06)] overflow-hidden transition-all duration-300 border-2 ${selectedIds.includes(item.cartItemId) ? 'border-[#d90f0f]/20' : 'border-transparent'
+                    }`}
+                >
+                  <div className="p-5 flex gap-5">
+                    {/* Checkbox */}
+                    <div className="flex items-center">
+                      <label className="cursor-pointer group">
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${selectedIds.includes(item.cartItemId)
+                              ? 'bg-[#d90f0f] border-[#d90f0f]'
+                              : 'border-gray-300 bg-white hover:border-[#d90f0f]'
+                            }`}
+                        >
+                          {selectedIds.includes(item.cartItemId) && (
+                            <Check size={14} className="text-white" strokeWidth={3} />
+                          )}
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          className="hidden" 
+                          checked={selectedIds.includes(item.cartItemId)}
+                          onChange={() => toggleSelect(item.cartItemId)}
+                        />
+                      </label>
                     </div>
-                    <button
-                      onClick={() => handleRemove(item.cartItemId)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Xóa
-                    </button>
+
+                    {/* Image */}
+                    <div className="w-28 h-28 bg-[#f3f3f3] rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {(() => {
+                        const img = item.imageUrl || (item.images && item.images[0]) || item.productImage || item.thumbnail;
+                        const src = typeof img === 'object' ? img.url : img;
+                        
+                        return src ? (
+                          <img
+                            src={src}
+                            alt={item.productName}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          <Glasses className="w-10 h-10 text-gray-400" />
+                        );
+                      })()}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-[#222]">
+                        {item.productName}
+                      </h3>
+                      {item.colorName && (
+                        <p className="text-sm text-[#4f5562] mt-0.5">
+                          Màu: {item.colorName}
+                        </p>
+                      )}
+                      {item.refractiveIndex && (
+                        <p className="text-sm text-[#4f5562] mt-0.5">
+                          Chiết suất: {item.refractiveIndex}
+                        </p>
+                      )}
+                      {item.variantSku && (
+                        <p className="text-xs text-[#4f5562] mt-0.5">
+                          SKU: {item.variantSku}
+                        </p>
+                      )}
+                      {/* Removed duplicate unit price display */}
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {item.isPreorder && (
+                          <span className="inline-block text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                            Đặt trước
+                          </span>
+                        )}
+                        {rx && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            <Check size={10} /> Có đơn kính
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Quantity & Remove */}
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="flex items-center border-2 border-[#e0e0e0] rounded-full">
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.cartItemId,
+                                item.quantity - 1
+                              )
+                            }
+                            className="px-4 py-2 hover:bg-[#f3f3f3] rounded-l-full transition"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="px-4 font-medium text-[#222]">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.cartItemId,
+                                item.quantity + 1
+                              )
+                            }
+                            className="px-4 py-2 hover:bg-[#f3f3f3] rounded-r-full transition"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => handleRemove(item.cartItemId)}
+                          className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-[#222] text-lg">
+                        {formatCurrency(item.price * item.quantity)}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Total */}
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-[#222] text-lg">
-                    {formatCurrency(item.price * item.quantity)}
-                  </p>
-                </div>
-                </div>
-
-                {/* Prescription expandable section */}
-                {rx && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedRx((prev) => ({
-                          ...prev,
-                          [rxKey]: !prev[rxKey],
-                        }))
-                      }
-                      className="w-full flex items-center justify-between px-5 py-2.5 bg-blue-50 hover:bg-red-100 transition border-t border-red-100"
-                    >
-                      <div className="flex items-center gap-2 text-sm text-red-700 font-medium">
-                        <Eye className="w-4 h-4" />
-                        Xem đơn kính
-                      </div>
-                      <ChevronDown
-                        className={`w-4 h-4 text-red-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                      />
-                    </button>
-                    {isExpanded && (
-                      <div className="px-5 py-4 bg-blue-50/50 border-t border-red-100">
-                        <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold text-gray-400 mb-2">
-                          <div></div>
-                          <div>SPH</div>
-                          <div>CYL</div>
-                          <div>AXS</div>
-                          <div>ADD</div>
+                  {/* Prescription expandable section */}
+                  {rx && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedRx((prev) => ({
+                            ...prev,
+                            [rxKey]: !prev[rxKey],
+                          }))
+                        }
+                        className="w-full flex items-center justify-between px-5 py-2.5 bg-blue-50 hover:bg-red-100 transition border-t border-red-100"
+                      >
+                        <div className="flex items-center gap-2 text-sm text-red-700 font-medium">
+                          <Eye className="w-4 h-4" />
+                          Xem đơn kính
                         </div>
-                        <div className="grid grid-cols-5 gap-2 text-center text-sm mb-1">
-                          <div className="text-left font-semibold text-[#222]">OD</div>
-                          <div>{rx.od_sph || '0.00'}</div>
-                          <div>{rx.od_cyl || '0.00'}</div>
-                          <div>{rx.od_axs || '0'}</div>
-                          <div>{rx.od_add || '0.00'}</div>
-                        </div>
-                        <div className="grid grid-cols-5 gap-2 text-center text-sm mb-3">
-                          <div className="text-left font-semibold text-[#222]">OS</div>
-                          <div>{rx.os_sph || '0.00'}</div>
-                          <div>{rx.os_cyl || '0.00'}</div>
-                          <div>{rx.os_axs || '0'}</div>
-                          <div>{rx.os_add || '0.00'}</div>
-                        </div>
-                        {rx.pd && (
-                          <p className="text-sm text-[#4f5562]">
-                            <span className="font-medium">PD:</span> {rx.pd}
-                          </p>
-                        )}
-                        {rx.note && (
-                          <p className="text-sm text-[#4f5562] mt-1">
-                            <span className="font-medium">Ghi chú:</span> {rx.note}
-                          </p>
-                        )}
-                        {rx.imageUrl && (
-                          <div className="mt-2">
-                            <img
-                              src={rx.imageUrl}
-                              alt="Đơn kính"
-                              className="w-32 h-auto rounded-lg border"
-                            />
+                        <ChevronDown
+                          className={`w-4 h-4 text-red-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {isExpanded && (
+                        <div className="px-5 py-4 bg-blue-50/50 border-t border-red-100">
+                          <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold text-gray-400 mb-2">
+                            <div></div>
+                            <div>SPH</div>
+                            <div>CYL</div>
+                            <div>AXS</div>
+                            <div>ADD</div>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                          <div className="grid grid-cols-5 gap-2 text-center text-sm mb-1">
+                            <div className="text-left font-semibold text-[#222]">OD</div>
+                            <div>{rx.od_sph || '0.00'}</div>
+                            <div>{rx.od_cyl || '0.00'}</div>
+                            <div>{rx.od_axs || '0'}</div>
+                            <div>{rx.od_add || '0.00'}</div>
+                          </div>
+                          <div className="grid grid-cols-5 gap-2 text-center text-sm mb-3">
+                            <div className="text-left font-semibold text-[#222]">OS</div>
+                            <div>{rx.os_sph || '0.00'}</div>
+                            <div>{rx.os_cyl || '0.00'}</div>
+                            <div>{rx.os_axs || '0'}</div>
+                            <div>{rx.os_add || '0.00'}</div>
+                          </div>
+                          {rx.pd && (
+                            <p className="text-sm text-[#4f5562]">
+                              <span className="font-medium">PD:</span> {rx.pd}
+                            </p>
+                          )}
+                          {rx.note && (
+                            <p className="text-sm text-[#4f5562] mt-1">
+                              <span className="font-medium">Ghi chú:</span> {rx.note}
+                            </p>
+                          )}
+                          {rx.imageUrl && (
+                            <div className="mt-2">
+                              <img
+                                src={rx.imageUrl}
+                                alt="Đơn kính"
+                                className="w-32 h-auto rounded-lg border"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               );
             })}
 
@@ -456,7 +540,7 @@ const CartPage = () => {
                       </div>
                       <div className="mt-1.5 text-xs text-green-600 space-y-0.5">
                         {appliedVoucher.discountType === 'PERCENTAGE' ||
-                        appliedVoucher.discountType === 'PERCENT' ? (
+                          appliedVoucher.discountType === 'PERCENT' ? (
                           <>
                             <p>
                               Giảm {appliedVoucher.value}% đơn hàng
@@ -533,10 +617,33 @@ const CartPage = () => {
               </div>
 
               <button
-                onClick={() => navigate('/checkout')}
-                className="w-full bg-[#361414] text-white py-4 rounded-full font-medium hover:bg-[#0d1322] transition"
+                onClick={() => {
+                  if (selectedIds.length === 0) {
+                    toast.warning('Vui lòng chọn ít nhất một sản phẩm để thanh toán');
+                    return;
+                  }
+
+                  const hasLens = selectedItems.some(
+                    (item) => item.productType?.toLowerCase() === 'lens'
+                  );
+                  const hasFrame = selectedItems.some(
+                    (item) => item.productType?.toLowerCase() === 'frame'
+                  );
+
+                  if (hasLens && !hasFrame) {
+                    toast.error(
+                      'Khi mua tròng kính, bạn bắt buộc phải mua thêm gọng kính'
+                    );
+                    return;
+                  }
+
+                  sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
+                  navigate('/checkout');
+                }}
+                disabled={selectedIds.length === 0}
+                className="w-full bg-[#361414] text-white py-4 rounded-full font-medium hover:bg-[#0d1322] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Tiến hành thanh toán
+                Tiến hành thanh toán {selectedIds.length > 0 && `(${selectedIds.length})`}
               </button>
             </div>
           </div>

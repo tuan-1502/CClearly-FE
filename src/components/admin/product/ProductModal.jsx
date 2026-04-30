@@ -578,9 +578,10 @@ const ProductModal = ({
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveVariantImage(index, img.id)}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-px opacity-0 group-hover:opacity-100 transition"
+                                  className="absolute top-0 left-0 bg-red-500 text-white rounded-full p-0.5 z-30 shadow-md transition-all hover:bg-red-600 hover:scale-110 flex items-center justify-center -translate-x-1/3 -translate-y-1/3"
+                                  title="Xóa ảnh"
                                 >
-                                  <X size={8} />
+                                  <X size={10} />
                                 </button>
                               </div>
                             ))}
