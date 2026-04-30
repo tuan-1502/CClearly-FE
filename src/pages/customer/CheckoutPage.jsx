@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Glasses,
   Tag,
@@ -44,7 +44,24 @@ const CheckoutPage = () => {
   const clearCart = useClearCart();
 
   const cart = cartData?.data || cartData;
-  const items = cart?.items || [];
+  const rawItems = cart?.items || [];
+
+  // Filter items to only show the ones user selected for checkout
+  const items = (() => {
+    const saved = sessionStorage.getItem('selectedCartItemIds');
+    if (saved) {
+      try {
+        const selectedIds = JSON.parse(saved);
+        if (selectedIds.length > 0) {
+          return rawItems.filter((item) => selectedIds.includes(item.cartItemId));
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    return rawItems;
+  })();
+
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -282,6 +299,18 @@ const CheckoutPage = () => {
       return;
     }
 
+    const hasLens = items.some(
+      (item) => item.productType?.toLowerCase() === 'lens'
+    );
+    const hasFrame = items.some(
+      (item) => item.productType?.toLowerCase() === 'frame'
+    );
+
+    if (hasLens && !hasFrame) {
+      toast.error('Khi mua tròng kính, bạn bắt buộc phải mua thêm gọng kính');
+      return;
+    }
+
 
 
     try {
@@ -293,6 +322,13 @@ const CheckoutPage = () => {
         couponCode: appliedVoucher?.code || null,
         notes,
         paymentMethod,
+        cartItemIds: items.map(item => item.cartItemId),
+        items: items.map(item => ({
+          variantId: item.variantId,
+          quantity: item.quantity,
+          cartItemId: item.cartItemId
+        })),
+        totalAmount: totalAmount
       });
 
       // Save prescriptions for lens items if any
@@ -332,7 +368,9 @@ const CheckoutPage = () => {
 
       sessionStorage.removeItem('cartPrescriptions');
       sessionStorage.removeItem('cartVoucher');
-      await clearCart.mutateAsync();
+      sessionStorage.removeItem('selectedCartItemIds');
+      // No need to clearCart here as the backend should remove the ordered items
+      // and query inversion will refresh the cart data.
       navigate('/profile');
     } catch (error) {
       // Error handled by hook
@@ -374,22 +412,22 @@ const CheckoutPage = () => {
               <span className="font-medium text-red-800">Đơn kính đính kèm</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {items.filter((item) => hasPrescription(item)).map((item) => (
-                  <div
-                    key={item.cartItemId}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-700"
-                  >
-                    <Check size={12} />
-                    {item.productName.substring(0, 20)}...
-                  </div>
-                ))}
+              {checkoutItems.filter((item) => hasPrescription(item)).map((item) => (
+                <div
+                  key={item.cartItemId}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-700"
+                >
+                  <Check size={12} />
+                  {item.productName.substring(0, 20)}...
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Prescription detail cards */}
         {hasPrescriptionItems &&
-          items.filter((item) => hasPrescription(item)).map((item) => {
+          checkoutItems.filter((item) => hasPrescription(item)).map((item) => {
             const rxKey = item.variantId || item.cartItemId;
             const rx =
               prescriptions[item.variantId] || prescriptions[item.cartItemId];
@@ -999,27 +1037,33 @@ const CheckoutPage = () => {
                 {items.map((item) => (
                   <div key={item.cartItemId} className="flex gap-4">
                     <div className="w-16 h-16 bg-[#f3f3f3] rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.productName}
-                          className="w-full h-full object-cover rounded-xl"
-                        />
-                      ) : (
-                        <Glasses className="w-8 h-8 text-gray-400" />
-                      )}
+                      {(() => {
+                        const img = item.imageUrl || (item.images && item.images[0]) || item.productImage || item.thumbnail;
+                        const src = typeof img === 'object' ? img.url : img;
+                        
+                        return src ? (
+                          <img
+                            src={src}
+                            alt={item.productName}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          <Glasses className="w-8 h-8 text-gray-400" />
+                        );
+                      })()}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-[#222] text-sm line-clamp-1">
                         {item.productName}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-2 text-xs text-[#4f5562]">
-                        <span>x{item.quantity}</span>
+                        <span className="font-medium text-[#d90f0f]">{formatCurrency(item.price)}</span>
+                        <span>· x{item.quantity}</span>
                         {item.colorName && <span>· {item.colorName}</span>}
                         {item.refractiveIndex && <span>· CS {item.refractiveIndex}</span>}
                       </div>
                       {(prescriptions[item.variantId] ||
-                          prescriptions[item.cartItemId]) && (
+                        prescriptions[item.cartItemId]) && (
                           <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
                             <FileText size={10} /> Có đơn kính
                           </p>
@@ -1059,7 +1103,7 @@ const CheckoutPage = () => {
                     </div>
                     <div className="mt-1.5 text-xs text-green-600 space-y-0.5">
                       {appliedVoucher.discountType === 'PERCENTAGE' ||
-                      appliedVoucher.discountType === 'PERCENT' ? (
+                        appliedVoucher.discountType === 'PERCENT' ? (
                         <>
                           <p>
                             Giảm {appliedVoucher.value}% đơn hàng
