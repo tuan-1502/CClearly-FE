@@ -1,4 +1,4 @@
-﻿import {
+import {
   Lock,
   User,
   LogOut,
@@ -17,7 +17,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserOrders, useCancelOrder } from '@/hooks/useOrder';
+import { useUserOrders, useCancelOrder, useOrderDetail } from '@/hooks/useOrder';
 import {
   useUserProfile,
   useUpdateProfile,
@@ -68,6 +68,9 @@ const ProfilePage = () => {
   );
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const { data: fullOrderDetail, isLoading: isDetailLoading } = useOrderDetail(
+    selectedOrder?.orderId || selectedOrder?.id
+  );
   const [cancelConfirm, setCancelConfirm] = useState({
     isOpen: false,
     orderId: null,
@@ -560,7 +563,8 @@ const ProfilePage = () => {
                       <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-[#222]">
                           Chi tiết đơn hàng #
-                          {selectedOrder.code || selectedOrder.orderId}
+                          {(fullOrderDetail || selectedOrder).code ||
+                            (fullOrderDetail || selectedOrder).orderId}
                         </h2>
                         <button
                           onClick={() => setSelectedOrder(null)}
@@ -570,171 +574,254 @@ const ProfilePage = () => {
                         </button>
                       </div>
                       <div className="p-6 space-y-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-[#4f5562]">Trạng thái</p>
-                            {getStatusBadge(selectedOrder.status)}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-[#4f5562]">Ngày đặt</p>
-                            <p className="font-medium text-[#222]">
-                              {new Date(
-                                selectedOrder.createdAt
-                              ).toLocaleDateString('vi-VN', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                        {isDetailLoading && !fullOrderDetail ? (
+                          <div className="text-center py-10">
+                            <p className="text-gray-500 italic">
+                              Đang tải chi tiết đơn hàng...
                             </p>
                           </div>
-                        </div>
-                        <div className="border-t pt-4">
-                          <h3 className="font-medium text-[#222] mb-3">
-                            Thông tin giao hàng
-                          </h3>
-                          <div className="space-y-2 text-sm">
-                            {selectedOrder.recipientName && (
-                              <p className="flex items-center gap-2 text-[#4f5562]">
-                                <User className="w-4 h-4" />
-                                {selectedOrder.recipientName}
-                              </p>
-                            )}
-                            <p className="flex items-center gap-2 text-[#4f5562]">
-                              <MapPin className="w-4 h-4" />
-                              {[
-                                selectedOrder.shippingStreet,
-                                selectedOrder.shippingCity,
-                              ]
-                                .filter(Boolean)
-                                .join(', ') || 'N/A'}
-                            </p>
-                            {selectedOrder.shippingPhone && (
-                              <p className="flex items-center gap-2 text-[#4f5562]">
-                                <Phone className="w-4 h-4" />
-                                {selectedOrder.shippingPhone}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="border-t pt-4">
-                          <h3 className="font-medium text-[#222] mb-3">
-                            Sản phẩm
-                          </h3>
-                          <div className="space-y-3">
-                            {(selectedOrder.items || []).map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-start gap-3"
-                              >
-                                {item.imageUrl && (
-                                  <img
-                                    src={item.imageUrl}
-                                    alt=""
-                                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                                  />
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-[#4f5562]">
+                                  Trạng thái
+                                </p>
+                                {getStatusBadge(
+                                  (fullOrderDetail || selectedOrder).status
                                 )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[#222] truncate">
-                                    {item.productName}
-                                  </p>
-                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-[#4f5562]">
-                                    {item.colorName && (
-                                      <span>Màu: {item.colorName}</span>
-                                    )}
-                                    {item.refractiveIndex != null && (
-                                      <span>CS: {item.refractiveIndex}</span>
-                                    )}
-                                    {item.variantSku && (
-                                      <span className="text-xs">
-                                        ({item.variantSku})
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-[#4f5562]">
-                                    x{item.quantity}
-                                  </p>
-                                  {/* Prescription details */}
-                                  {item.prescription && (
-                                    <div className="mt-2 p-2.5 bg-blue-50 rounded-lg border border-red-100">
-                                      <p className="text-xs font-medium text-red-700 mb-1.5">Đơn kính</p>
-                                      {item.prescription.imageUrl && (
-                                        <a href={item.prescription.imageUrl} target="_blank" rel="noreferrer"
-                                          className="text-xs text-red-600 underline mb-1.5 block">Xem ảnh đơn thuốc</a>
-                                      )}
-                                      <div className="grid grid-cols-5 gap-0.5 text-[11px] text-center">
-                                        <div></div>
-                                        <div className="font-medium text-[#4f5562]">SPH</div>
-                                        <div className="font-medium text-[#4f5562]">CYL</div>
-                                        <div className="font-medium text-[#4f5562]">AXS</div>
-                                        <div className="font-medium text-[#4f5562]">ADD</div>
-                                        <div className="font-medium text-[#4f5562]">OD</div>
-                                        <div>{item.prescription.sphOd ?? '–'}</div>
-                                        <div>{item.prescription.cylOd ?? '–'}</div>
-                                        <div>{item.prescription.axisOd ?? '–'}</div>
-                                        <div>{item.prescription.addOd ?? '–'}</div>
-                                        <div className="font-medium text-[#4f5562]">OS</div>
-                                        <div>{item.prescription.sphOs ?? '–'}</div>
-                                        <div>{item.prescription.cylOs ?? '–'}</div>
-                                        <div>{item.prescription.axisOs ?? '–'}</div>
-                                        <div>{item.prescription.addOs ?? '–'}</div>
-                                      </div>
-                                      {item.prescription.pd != null && (
-                                        <p className="text-[11px] text-[#4f5562] mt-1">PD: {item.prescription.pd}</p>
-                                      )}
-                                      {item.prescription.salesNote && (
-                                        <p className="text-[11px] text-[#4f5562] mt-0.5">Ghi chú: {item.prescription.salesNote}</p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <p className="font-medium text-[#222] flex-shrink-0">
-                                  {formatCurrency(
-                                    item.unitPrice * item.quantity
-                                  )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-[#4f5562]">
+                                  Ngày đặt
+                                </p>
+                                <p className="font-medium text-[#222]">
+                                  {new Date(
+                                    (fullOrderDetail || selectedOrder).createdAt
+                                  ).toLocaleDateString('vi-VN', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
                                 </p>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                        {selectedOrder.shippingFee != null && (
-                          <div className="border-t pt-4">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#4f5562]">
-                                Phí vận chuyển
-                              </span>
-                              <span>
-                                {formatCurrency(selectedOrder.shippingFee)}
-                              </span>
                             </div>
-                          </div>
-                        )}
-                        {selectedOrder.discountAmount > 0 && (
-                          <div className="border-t pt-4">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#4f5562]">
-                                Giảm giá
-                                {selectedOrder.couponCode && (
-                                  <span className="ml-1 px-1.5 py-0.5 bg-green-50 text-green-700 text-xs rounded font-medium">
-                                    {selectedOrder.couponCode}
-                                  </span>
+                            <div className="border-t pt-4">
+                              <h3 className="font-medium text-[#222] mb-3">
+                                Thông tin giao hàng
+                              </h3>
+                              <div className="space-y-2 text-sm">
+                                {(fullOrderDetail || selectedOrder)
+                                  .recipientName && (
+                                  <p className="flex items-center gap-2 text-[#4f5562]">
+                                    <User className="w-4 h-4" />
+                                    {(fullOrderDetail || selectedOrder)
+                                      .recipientName}
+                                  </p>
                                 )}
-                              </span>
-                              <span className="text-green-600 font-medium">
-                                -{formatCurrency(selectedOrder.discountAmount)}
-                              </span>
+                                <p className="flex items-center gap-2 text-[#4f5562]">
+                                  <MapPin className="w-4 h-4" />
+                                  {[
+                                    (fullOrderDetail || selectedOrder)
+                                      .shippingStreet,
+                                    (fullOrderDetail || selectedOrder)
+                                      .shippingCity,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(', ') || 'N/A'}
+                                </p>
+                                {(fullOrderDetail || selectedOrder)
+                                  .shippingPhone && (
+                                  <p className="flex items-center gap-2 text-[#4f5562]">
+                                    <Phone className="w-4 h-4" />
+                                    {(fullOrderDetail || selectedOrder)
+                                      .shippingPhone}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                            <div className="border-t pt-4">
+                              <h3 className="font-medium text-[#222] mb-3">
+                                Sản phẩm
+                              </h3>
+                              <div className="space-y-3">
+                                {(
+                                  (fullOrderDetail || selectedOrder).items || []
+                                ).map((item, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-3"
+                                  >
+                                    {item.imageUrl && (
+                                      <img
+                                        src={item.imageUrl}
+                                        alt=""
+                                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                      />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[#222] truncate">
+                                        {item.productName}
+                                      </p>
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-[#4f5562]">
+                                        {item.colorName && (
+                                          <span>Màu: {item.colorName}</span>
+                                        )}
+                                        {item.refractiveIndex != null && (
+                                          <span>
+                                            CS: {item.refractiveIndex}
+                                          </span>
+                                        )}
+                                        {item.variantSku && (
+                                          <span className="text-xs">
+                                            ({item.variantSku})
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-[#4f5562]">
+                                        x{item.quantity}
+                                      </p>
+                                      {/* Prescription details */}
+                                      {item.prescription && (
+                                        <div className="mt-2 p-2.5 bg-blue-50 rounded-lg border border-red-100">
+                                          <p className="text-xs font-medium text-red-700 mb-1.5">
+                                            Đơn kính
+                                          </p>
+                                          {item.prescription.imageUrl && (
+                                            <a
+                                              href={item.prescription.imageUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-xs text-red-600 underline mb-1.5 block"
+                                            >
+                                              Xem ảnh đơn thuốc
+                                            </a>
+                                          )}
+                                          <div className="grid grid-cols-5 gap-0.5 text-[11px] text-center">
+                                            <div></div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              SPH
+                                            </div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              CYL
+                                            </div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              AXS
+                                            </div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              ADD
+                                            </div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              OD
+                                            </div>
+                                            <div>
+                                              {item.prescription.sphOd ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.cylOd ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.axisOd ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.addOd ?? '–'}
+                                            </div>
+                                            <div className="font-medium text-[#4f5562]">
+                                              OS
+                                            </div>
+                                            <div>
+                                              {item.prescription.sphOs ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.cylOs ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.axisOs ?? '–'}
+                                            </div>
+                                            <div>
+                                              {item.prescription.addOs ?? '–'}
+                                            </div>
+                                          </div>
+                                          {item.prescription.pd != null && (
+                                            <p className="text-[11px] text-[#4f5562] mt-1">
+                                              PD: {item.prescription.pd}
+                                            </p>
+                                          )}
+                                          {item.prescription.salesNote && (
+                                            <p className="text-[11px] text-[#4f5562] mt-0.5">
+                                              Ghi chú:{' '}
+                                              {item.prescription.salesNote}
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <p className="font-medium text-[#222] flex-shrink-0">
+                                      {formatCurrency(
+                                        item.unitPrice * item.quantity
+                                      )}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {(fullOrderDetail || selectedOrder).shippingFee !=
+                              null && (
+                              <div className="border-t pt-4">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-[#4f5562]">
+                                    Phí vận chuyển
+                                  </span>
+                                  <span>
+                                    {formatCurrency(
+                                      (fullOrderDetail || selectedOrder)
+                                        .shippingFee
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {(fullOrderDetail || selectedOrder)
+                              .discountAmount > 0 && (
+                              <div className="border-t pt-4">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-[#4f5562]">
+                                    Giảm giá
+                                    {(fullOrderDetail || selectedOrder)
+                                      .couponCode && (
+                                      <span className="ml-1 px-1.5 py-0.5 bg-green-50 text-green-700 text-xs rounded font-medium">
+                                        {
+                                          (fullOrderDetail || selectedOrder)
+                                            .couponCode
+                                        }
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="text-green-600 font-medium">
+                                    -
+                                    {formatCurrency(
+                                      (fullOrderDetail || selectedOrder)
+                                        .discountAmount
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            <div className="border-t pt-4">
+                              <div className="flex justify-between text-lg font-bold">
+                                <span>Tổng cộng</span>
+                                <span>
+                                  {formatCurrency(
+                                    (fullOrderDetail || selectedOrder)
+                                      .finalAmount
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </>
                         )}
-                        <div className="border-t pt-4">
-                          <div className="flex justify-between text-lg font-bold">
-                            <span>Tổng cộng</span>
-                            <span>
-                              {formatCurrency(selectedOrder.finalAmount)}
-                            </span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>

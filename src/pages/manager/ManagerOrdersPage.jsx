@@ -27,9 +27,12 @@ const ManagerOrdersPage = () => {
 
   // Fetch orders (requesting a larger size for the board view)
   const { data: ordersData, isLoading } = useAdminOrders({
-    size: 200,
+    size: 1000,
   });
-  const allOrders = ordersData?.items || ordersData || [];
+  const rawOrders = ordersData?.items || ordersData || [];
+  // Permanent Filter: Clear all orders before April 1st, 2026
+  const aprilFirst = new Date(2026, 3, 1);
+  const allOrders = rawOrders.filter(order => new Date(order.createdAt) >= aprilFirst);
   const updateOrderStatusMutation = useUpdateOrderStatus();
 
   const [confirmModal, setConfirmModal] = useState({

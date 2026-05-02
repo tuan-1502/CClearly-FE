@@ -1,4 +1,4 @@
-﻿import {
+import {
   Search,
   Eye,
   Edit2,
@@ -34,13 +34,15 @@ const SalesOrdersPage = () => {
 
   const { data: ordersData } = useAdminOrders({
     status: statusFilter !== 'all' ? statusFilter : undefined,
-    page: currentPage,
-    size: pageSize,
+    size: 1000,
   });
-  const orders = ordersData?.items || ordersData || [];
-  const totalItems = ordersData?.meta?.totalElements || orders.length;
-  const totalPages =
-    ordersData?.meta?.totalPages || Math.ceil(totalItems / pageSize);
+  
+  const rawOrders = ordersData?.items || ordersData || [];
+  const aprilFirst = new Date(2026, 3, 1);
+  const orders = rawOrders.filter(order => new Date(order.createdAt) >= aprilFirst);
+
+  const totalItems = orders.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
 
   const savePrescriptionMutation = useSavePrescription();
   const updateStatusMutation = useUpdateOrderStatus();
@@ -84,7 +86,10 @@ const SalesOrdersPage = () => {
     return matchesSearch;
   });
 
-  const paginatedOrders = filteredOrders;
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('vi-VN', {

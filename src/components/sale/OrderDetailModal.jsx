@@ -1,4 +1,4 @@
-﻿import {
+import {
   X,
   Package,
   User,
@@ -13,6 +13,7 @@
   RotateCcw,
   Mail,
 } from 'lucide-react';
+import { useOrderDetail } from '@/hooks/useOrder';
 
 const STATUS_MAP = {
   PENDING: {
@@ -68,7 +69,12 @@ const fmt = (amount) =>
     amount || 0
   );
 
-const OrderDetailModal = ({ order, onClose, onConfirm, onCancel }) => {
+const OrderDetailModal = ({ order: initialOrder, onClose, onConfirm, onCancel }) => {
+  const { data: fullOrder, isLoading } = useOrderDetail(
+    initialOrder?.orderId || initialOrder?.id
+  );
+  const order = fullOrder || initialOrder;
+
   if (!order) return null;
 
   const statusInfo = STATUS_MAP[order.status] || {
@@ -99,7 +105,13 @@ const OrderDetailModal = ({ order, onClose, onConfirm, onCancel }) => {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Order Info */}
+          {isLoading && !fullOrder ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500 italic">Đang tải chi tiết đơn hàng...</p>
+            </div>
+          ) : (
+            <>
+              {/* Order Info */}
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
             <div className="w-12 h-12 bg-[#d90f0f] rounded-xl flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
@@ -297,6 +309,8 @@ const OrderDetailModal = ({ order, onClose, onConfirm, onCancel }) => {
                 {order.notes}
               </p>
             </div>
+          )}
+            </>
           )}
         </div>
 

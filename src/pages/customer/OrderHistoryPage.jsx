@@ -1,10 +1,10 @@
-﻿import { Lock, Package, X, MapPin, Phone, User } from 'lucide-react';
+import { Lock, Package, X, MapPin, Phone, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserOrders, useCancelOrder } from '@/hooks/useOrder';
+import { useUserOrders, useCancelOrder, useOrderDetail } from '@/hooks/useOrder';
 
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
@@ -14,6 +14,9 @@ const OrderHistoryPage = () => {
   const cancelOrder = useCancelOrder();
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const { data: fullOrderDetail, isLoading: isDetailLoading } = useOrderDetail(
+    selectedOrder?.orderId || selectedOrder?.id
+  );
   const [cancelConfirm, setCancelConfirm] = useState({
     isOpen: false,
     orderId: null,
@@ -267,7 +270,9 @@ const OrderHistoryPage = () => {
           <div className="relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-[#222]">
-                Chi tiết đơn hàng #{selectedOrder.code || selectedOrder.orderId}
+                Chi tiết đơn hàng #
+                {(fullOrderDetail || selectedOrder).code ||
+                  (fullOrderDetail || selectedOrder).orderId}
               </h2>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -278,88 +283,110 @@ const OrderHistoryPage = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#4f5562]">Trạng thái</p>
-                  {getStatusBadge(selectedOrder.status)}
+              {isDetailLoading && !fullOrderDetail ? (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">Đang tải chi tiết...</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-[#4f5562]">Ngày đặt</p>
-                  <p className="font-medium text-[#222]">
-                    {new Date(selectedOrder.createdAt).toLocaleDateString(
-                      'vi-VN',
-                      {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-medium text-[#222] mb-3">
-                  Thông tin giao hàng
-                </h3>
-                <div className="space-y-2 text-sm">
-                  {selectedOrder.recipientName && (
-                    <p className="flex items-center gap-2 text-[#4f5562]">
-                      <User className="w-4 h-4" />
-                      {selectedOrder.recipientName}
-                    </p>
-                  )}
-                  <p className="flex items-center gap-2 text-[#4f5562]">
-                    <MapPin className="w-4 h-4" />
-                    {[selectedOrder.shippingStreet, selectedOrder.shippingCity]
-                      .filter(Boolean)
-                      .join(', ') || 'N/A'}
-                  </p>
-                  {selectedOrder.shippingPhone && (
-                    <p className="flex items-center gap-2 text-[#4f5562]">
-                      <Phone className="w-4 h-4" />
-                      {selectedOrder.shippingPhone}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-medium text-[#222] mb-3">Sản phẩm</h3>
-                <div className="space-y-3">
-                  {(selectedOrder.items || []).map((item, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <div>
-                        <p className="text-[#222]">{item.productName}</p>
-                        <p className="text-sm text-[#4f5562]">
-                          x{item.quantity}
-                        </p>
-                      </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[#4f5562]">Trạng thái</p>
+                      {getStatusBadge(
+                        (fullOrderDetail || selectedOrder).status
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-[#4f5562]">Ngày đặt</p>
                       <p className="font-medium text-[#222]">
-                        {formatCurrency(item.unitPrice * item.quantity)}
+                        {new Date(
+                          (fullOrderDetail || selectedOrder).createdAt
+                        ).toLocaleDateString('vi-VN', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {selectedOrder.shippingFee != null && (
-                <div className="border-t pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#4f5562]">Phí vận chuyển</span>
-                    <span>{formatCurrency(selectedOrder.shippingFee)}</span>
                   </div>
-                </div>
-              )}
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Tổng cộng</span>
-                  <span>{formatCurrency(selectedOrder.finalAmount)}</span>
-                </div>
-              </div>
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium text-[#222] mb-3">
+                      Thông tin giao hàng
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      {(fullOrderDetail || selectedOrder).recipientName && (
+                        <p className="flex items-center gap-2 text-[#4f5562]">
+                          <User className="w-4 h-4" />
+                          {(fullOrderDetail || selectedOrder).recipientName}
+                        </p>
+                      )}
+                      <p className="flex items-center gap-2 text-[#4f5562]">
+                        <MapPin className="w-4 h-4" />
+                        {[
+                          (fullOrderDetail || selectedOrder).shippingStreet,
+                          (fullOrderDetail || selectedOrder).shippingCity,
+                        ]
+                          .filter(Boolean)
+                          .join(', ') || 'N/A'}
+                      </p>
+                      {(fullOrderDetail || selectedOrder).shippingPhone && (
+                        <p className="flex items-center gap-2 text-[#4f5562]">
+                          <Phone className="w-4 h-4" />
+                          {(fullOrderDetail || selectedOrder).shippingPhone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium text-[#222] mb-3">Sản phẩm</h3>
+                    <div className="space-y-3">
+                      {(
+                        (fullOrderDetail || selectedOrder).items || []
+                      ).map((item, idx) => (
+                        <div key={idx} className="flex justify-between">
+                          <div>
+                            <p className="text-[#222]">{item.productName}</p>
+                            <p className="text-sm text-[#4f5562]">
+                              x{item.quantity}
+                            </p>
+                          </div>
+                          <p className="font-medium text-[#222]">
+                            {formatCurrency(item.unitPrice * item.quantity)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(fullOrderDetail || selectedOrder).shippingFee != null && (
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#4f5562]">Phí vận chuyển</span>
+                        <span>
+                          {formatCurrency(
+                            (fullOrderDetail || selectedOrder).shippingFee
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Tổng cộng</span>
+                      <span>
+                        {formatCurrency(
+                          (fullOrderDetail || selectedOrder).finalAmount
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

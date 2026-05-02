@@ -52,13 +52,16 @@ const AdminOrdersPage = () => {
 
   const { data: ordersData } = useAdminOrders({
     status: filters.type !== 'all' && filters.type !== '' ? filters.type : undefined,
-    page: filters.page,
-    size: filters.size,
+    size: 1000, // Fetch more to filter on client
   });
-  const orders = ordersData?.items || ordersData || [];
-  const totalItems = ordersData?.meta?.totalElements || orders.length;
-  const totalPages =
-    ordersData?.meta?.totalPages || Math.ceil(totalItems / filters.size);
+  
+  const rawOrders = ordersData?.items || ordersData || [];
+  // Permanent Filter: Clear all orders before April 1st, 2026
+  const aprilFirst = new Date(2026, 3, 1);
+  const orders = rawOrders.filter(order => new Date(order.createdAt) >= aprilFirst);
+
+  const totalItems = orders.length;
+  const totalPages = Math.ceil(totalItems / filters.size);
 
   const savePrescriptionMutation = useSavePrescription();
   const updateStatusMutation = useUpdateOrderStatus();
@@ -186,8 +189,11 @@ const AdminOrdersPage = () => {
     filteredOrders.sort((a, b) => (b.recipientName || '').localeCompare(a.recipientName || ''));
   }
 
-  // pagination
-  const paginatedOrders = filteredOrders;
+  // client-side pagination
+  const paginatedOrders = filteredOrders.slice(
+    (filters.page - 1) * filters.size,
+    filters.page * filters.size
+  );
 
   /* ---------- Actions ---------- */
 

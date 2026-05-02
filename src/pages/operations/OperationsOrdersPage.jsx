@@ -1,4 +1,4 @@
-﻿import { Search, Package, Truck, CheckCircle, Eye } from 'lucide-react';
+import { Search, Package, Truck, CheckCircle, Eye } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -20,12 +20,15 @@ const OperationsOrdersPage = () => {
 
   const { data: ordersData } = useAdminOrders({
     status: status !== 'all' ? status : undefined,
-    page: page,
-    size: pageSize,
+    size: 1000, // Fetch more for client-side filtering
   });
-  const orders = ordersData?.items || ordersData || [];
-  const totalItems = ordersData?.meta?.totalElements || orders.length;
-  const totalPages = ordersData?.meta?.totalPages || Math.ceil(totalItems / pageSize);
+  
+  const rawOrders = ordersData?.items || ordersData || [];
+  const aprilFirst = new Date(2026, 3, 1);
+  const orders = rawOrders.filter(order => new Date(order.createdAt) >= aprilFirst);
+
+  const totalItems = orders.length;
+  const totalPages = Math.ceil(totalItems / (pageSize === 'all' ? totalItems : pageSize));
 
   const updateOrderStatusMutation = useUpdateOrderStatus();
 
@@ -99,8 +102,10 @@ const OperationsOrdersPage = () => {
     return result;
   }, [orders, search, sortParam]);
 
-  // Pagination is server-side
-  const paginated = filtered;
+  // client-side pagination
+  const paginated = pageSize === 'all' 
+    ? filtered 
+    : filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const handlePageSizeChange = (e) => {
     const newSize = e.target.value === 'all' ? 'all' : parseInt(e.target.value);

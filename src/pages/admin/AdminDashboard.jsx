@@ -26,7 +26,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth, ROLES } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
-import { useAdminDashboard, useAdminRevenue } from '@/hooks/useAdmin';
+import { useAdminDashboard, useAdminRevenue, useAdminUsers } from '@/hooks/useAdmin';
 import { useAdminOrders } from '@/hooks/useOrder';
 import { QUERY_KEYS } from '@/utils/endpoints';
 
@@ -72,12 +72,25 @@ const AdminDashboard = () => {
   const { data: revenueData, isLoading: loadingRevenue } = useAdminRevenue({
     days: 7,
   });
-  const { data: ordersData, isLoading: loadingOrders } = useAdminOrders({
+  const { data: allOrdersData, isLoading: loadingOrders } = useAdminOrders({
     page: 1,
-    size: 5,
+    size: 1000, // Fetch more to calculate "Tổng đơn hàng" since April 1st
   });
+  const { data: allUsersData } = useAdminUsers({ size: 1000 }); // Fetch more to count CUSTOMERs
 
-  const recentOrders = ordersData?.items || [];
+  // ─── Filtered Stats ───────────────────────────────────────────
+  // Use local time for April 1st to avoid UTC offset issues
+  const aprilFirst = new Date(2026, 3, 1); 
+  const newOrdersList = (allOrdersData?.items || []).filter(order => {
+    const orderDate = new Date(order.createdAt || order.orderDate);
+    return orderDate >= aprilFirst;
+  });
+  const newOrdersCount = newOrdersList.length;
+
+  const customerCount = (Array.isArray(allUsersData) ? allUsersData : allUsersData?.content || [])
+    .filter(u => u.role === 'CUSTOMER').length;
+
+  const recentOrders = (allOrdersData?.items || []).slice(0, 5);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('vi-VN', {
@@ -161,9 +174,9 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         <StatCard
           icon={<Package className="text-red-600" />}
-          title="Đơn hàng mới"
-          value={stats?.pendingOrders ?? 0}
-          detail={`${Math.floor((stats?.pendingOrders || 0) * 0.4)} đơn chưa thanh toán`}
+          title="Tổng đơn hàng"
+          value={newOrdersCount}
+          detail={`Tính từ 01/04/2026 đến nay`}
           detailColor="text-orange-600"
         />
 
@@ -180,7 +193,7 @@ const AdminDashboard = () => {
             <StatCard
               icon={<Users className="text-purple-600" />}
               title="Khách hàng"
-              value={(stats?.totalCustomers ?? 0).toLocaleString()}
+              value={customerCount.toLocaleString()}
               detail="Tăng trưởng ổn định"
               detailColor="text-purple-600"
             />
