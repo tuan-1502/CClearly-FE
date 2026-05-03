@@ -59,6 +59,25 @@ export const useCreateOrder = () => {
   });
 };
 
+// Buy Now: add to cart + create order in one request
+export const useBuyNow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const res = await orderRequest.buyNow(data);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CART });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER_ORDERS });
+    },
+    onError: (error) => {
+      handleErrorApi({ error });
+    },
+  });
+};
+
 // Create prescription order
 export const useCreatePrescriptionOrder = () => {
   const queryClient = useQueryClient();

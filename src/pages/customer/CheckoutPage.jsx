@@ -20,7 +20,7 @@ import { productRequest } from '@/api/product';
 import { uploadRequest } from '@/api/upload';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart, useClearCart } from '@/hooks/useCart';
-import { useCreateOrder, useSavePrescription } from '@/hooks/useOrder';
+import { useCreateOrder, useBuyNow, useSavePrescription } from '@/hooks/useOrder';
 import { useAddresses, useCreateAddress } from '@/hooks/useUser';
 import { QUERY_KEYS } from '@/utils/endpoints';
 
@@ -41,13 +41,29 @@ const CheckoutPage = () => {
 
   const { data: cartData } = useCart();
   const createOrder = useCreateOrder();
+  const buyNowOrder = useBuyNow();
   const clearCart = useClearCart();
+
+  // Detect buy-now mode (set by ProductDetailPage)
+  const isBuyNowMode = sessionStorage.getItem('buyNowMode') === '1';
+
+  // Parse buy-now item from sessionStorage (set by ProductDetailPage)
+  const buyNowItem = (() => {
+    if (!isBuyNowMode) return null;
+    try {
+      return JSON.parse(sessionStorage.getItem('buyNowItem'));
+    } catch {
+      return null;
+    }
+  })();
 
   const cart = cartData?.data || cartData;
   const rawItems = cart?.items || [];
 
-  // Filter items to only show the ones user selected for checkout
+  // In buy-now mode use the virtual item from sessionStorage (no cart needed).
+  // In normal mode filter by selectedCartItemIds if present.
   const items = (() => {
+    if (isBuyNowMode && buyNowItem) return [buyNowItem];
     const saved = sessionStorage.getItem('selectedCartItemIds');
     if (saved) {
       try {
@@ -306,30 +322,46 @@ const CheckoutPage = () => {
       (item) => item.productType?.toLowerCase() === 'frame'
     );
 
-    if (hasLens && !hasFrame) {
+    // Lens + frame rule only applies for regular cart checkout, not buy-now
+    if (!isBuyNowMode && hasLens && !hasFrame) {
       toast.error('Khi mua tròng kính, bạn bắt buộc phải mua thêm gọng kính');
       return;
     }
 
-
-
     try {
-      const orderRes = await createOrder.mutateAsync({
-        addressId: selectedAddress.addressId,
-        recipientName: selectedAddress.name,
-        phone: selectedAddress.phone,
-        street: selectedAddress.address,
-        couponCode: appliedVoucher?.code || null,
-        notes,
-        paymentMethod,
-        cartItemIds: items.map(item => item.cartItemId),
-        items: items.map(item => ({
-          variantId: item.variantId,
-          quantity: item.quantity,
-          cartItemId: item.cartItemId
-        })),
-        totalAmount: totalAmount
-      });
+      let orderRes;
+
+      if (isBuyNowMode) {
+        // BuyNowOrderRequest — backend handles adding to cart internally.
+        // Prioritise variantId; only send productId when there is no variant.
+        const buyNowPayload = {
+          ...(buyNowItem?.variantId
+            ? { variantId: buyNowItem.variantId }
+            : { productId: buyNowItem?.productId || null }),
+          quantity: buyNowItem?.quantity ?? 1,
+          addressId: selectedAddress.addressId,
+          recipientName: selectedAddress.name,
+          phone: selectedAddress.phone,
+          street: selectedAddress.address,
+          couponCode: appliedVoucher?.code || null,
+          notes,
+          paymentMethod: (paymentMethod || 'COD').toUpperCase(),
+        };
+        orderRes = await buyNowOrder.mutateAsync(buyNowPayload);
+      } else {
+        // CreateOrderRequest — backend calculates total from cart, no items[] or totalAmount needed.
+        const orderPayload = {
+          addressId: selectedAddress.addressId,
+          recipientName: selectedAddress.name,
+          phone: selectedAddress.phone,
+          street: selectedAddress.address,
+          couponCode: appliedVoucher?.code || null,
+          notes,
+          paymentMethod: (paymentMethod || 'COD').toUpperCase(),
+          cartItemIds: items.map((item) => item.cartItemId),
+        };
+        orderRes = await createOrder.mutateAsync(orderPayload);
+      }
 
       // Save prescriptions for lens items if any
       const orderId = orderRes?.orderId || orderRes?.data?.orderId;
@@ -366,14 +398,19 @@ const CheckoutPage = () => {
         }
       }
 
-      sessionStorage.removeItem('cartPrescriptions');
-      sessionStorage.removeItem('cartVoucher');
-      sessionStorage.removeItem('selectedCartItemIds');
-      // No need to clearCart here as the backend should remove the ordered items
-      // and query inversion will refresh the cart data.
+      // Clear all checkout-related session keys
+      [
+        'cartPrescriptions',
+        'cartVoucher',
+        'selectedCartItemIds',
+        'buyNowMode',
+        'buyNowItem',
+      ].forEach((key) => sessionStorage.removeItem(key));
+
+      // Backend removes the ordered items; React Query will refresh cart.
       navigate('/profile');
     } catch (error) {
-      // Error handled by hook
+      // Error handled by hook (handleErrorApi via toast)
     }
   };
 

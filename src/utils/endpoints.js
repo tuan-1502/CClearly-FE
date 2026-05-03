@@ -23,6 +23,7 @@ export const ENDPOINT = {
   ORDERS: '/orders',
   ORDER_DETAIL: (id) => `/orders/${id}`,
   CREATE_ORDER: '/orders',
+  BUY_NOW: '/orders/buy-now',
   CREATE_PRESCRIPTION_ORDER: '/orders/prescription',
   CANCEL_ORDER: (id) => `/orders/${id}/cancel`,
   UPDATE_ORDER_STATUS: (id) => `/orders/${id}/status`,

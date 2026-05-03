@@ -20,6 +20,12 @@ export const orderRequest = {
     return res.data;
   },
 
+  // Buy Now: add item to cart + create order in one shot
+  buyNow: async (data) => {
+    const res = await http.post(ENDPOINT.BUY_NOW, data);
+    return res.data;
+  },
+
   // Create prescription order (order with lens customization)
   createPrescriptionOrder: async (data) => {
     const res = await http.post(ENDPOINT.CREATE_PRESCRIPTION_ORDER, data);
