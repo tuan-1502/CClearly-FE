@@ -152,11 +152,11 @@ const PromotionPage = () => {
 
   const isPercent = (type) => type === 'PERCENT' || type === 'PERCENTAGE';
 
-  const filteredCoupons = coupons
+  const filteredCoupons = allCoupons
     .filter((c) => {
-      const matchesSearch = c.code
+      const matchesSearch = (c.code || '')
         .toLowerCase()
-        .includes(couponSearch.toLowerCase());
+        .includes(search.toLowerCase());
 
       if (couponFilter === 'active' && !c.isActive) return false;
       if (couponFilter === 'disabled' && c.isActive) return false;
@@ -194,6 +194,9 @@ const PromotionPage = () => {
       if (sortOption === 'newest') return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       return 0;
     });
+
+  const totalPages = Math.ceil(filteredCoupons.length / size);
+  const paginatedCoupons = filteredCoupons.slice((page - 1) * size, page * size);
 
   const isExtFilterActive =
     discountTypeFilter !== 'all' ||
@@ -470,7 +473,7 @@ const PromotionPage = () => {
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         {isLoading ? (
           <div className="text-center py-12 text-gray-400">Đang tải...</div>
-        ) : processedCoupons.length === 0 ? (
+        ) : filteredCoupons.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <Ticket className="w-10 h-10 mx-auto mb-2 text-gray-300" />
             {search || couponFilter !== 'all'
