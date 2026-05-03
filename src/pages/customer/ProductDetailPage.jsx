@@ -98,12 +98,29 @@ const ProductDetailPage = () => {
     } catch (err) { }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!canPurchase) return;
-    try {
-      await addToCart.mutateAsync(buildCartData());
-      navigate('/checkout');
-    } catch (err) { }
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/products/${id}` } } });
+      return;
+    }
+    // Save item selection for CheckoutPage — backend handles adding to cart internally
+    const buyNowItem = {
+      variantId: selectedVariant?.variantId || null,
+      productId: !selectedVariant ? product?.id : null,
+      quantity,
+      productName: product?.name || '',
+      productType: product?.type || '',
+      price: displayPrice || 0,
+      imageUrl: displayImages?.[0]?.url || displayImages?.[0] || '',
+      colorName: selectedVariant?.colorName || '',
+      sku: selectedVariant?.sku || '',
+    };
+    sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+    sessionStorage.setItem('buyNowMode', '1');
+    // Clear any stale cart selection to avoid conflicts
+    sessionStorage.removeItem('selectedCartItemIds');
+    navigate('/checkout');
   };
 
   if (isLoading) {
