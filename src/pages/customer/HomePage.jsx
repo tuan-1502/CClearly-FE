@@ -1,4 +1,4 @@
-﻿import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import heroWoman from '@/assets/homepage/hero_woman_v2.png';
@@ -69,9 +69,7 @@ const reviews = [
   },
 ];
 
-const reviewsTopTrack = [...reviews, ...reviews];
-const reviewsBottomSeed = [...reviews.slice(2), ...reviews.slice(0, 2)];
-const reviewsBottomTrack = [...reviewsBottomSeed, ...reviewsBottomSeed];
+
 
 const heroAvatars = [
   {
@@ -114,11 +112,25 @@ const GlassesSketch = ({ stroke = '#702B2B', className = 'h-20 w-full' }) => (
   </svg>
 );
 
+const REVIEWS_PER_PAGE = 4;
+
 const HomePage = () => {
   const { data: productData, isLoading } = useProducts({
     type: 'frame',
     limit: 4,
   });
+
+  // Reviews carousel state
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const totalReviewPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE);
+  const prevReview = () =>
+    setReviewIndex((prev) => (prev - 1 + totalReviewPages) % totalReviewPages);
+  const nextReview = () =>
+    setReviewIndex((prev) => (prev + 1) % totalReviewPages);
+  const visibleReviews = reviews.slice(
+    reviewIndex * REVIEWS_PER_PAGE,
+    reviewIndex * REVIEWS_PER_PAGE + REVIEWS_PER_PAGE
+  );
 
   // Fetch active banners
   const { data: allBanners } = useActiveBanners();
@@ -126,8 +138,6 @@ const HomePage = () => {
     allBanners?.filter((b) => b.position === 'HEADER') || [];
   const mainBanners =
     allBanners?.filter((b) => b.position === 'HOME_MAIN') || [];
-  const promoBanners =
-    allBanners?.filter((b) => b.position === 'HOME_PROMO') || [];
 
   // Carousel state for HOME_MAIN
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -506,32 +516,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ─── HOME_PROMO Banner ─── */}
-      {promoBanners.length > 0 && (
-        <section className="bg-[#f8f8f8]">
-          <div className="mx-auto grid max-w-[1240px] gap-4 px-4 py-6 sm:px-6 sm:grid-cols-2 lg:grid-cols-3">
-            {promoBanners.map((banner) => (
-              <Link
-                key={banner.bannerId}
-                to="/products"
-                className="group relative overflow-hidden rounded-2xl shadow-md transition hover:shadow-xl"
-              >
-                <img
-                  src={banner.imageUrl}
-                  alt={banner.title}
-                  className="h-[180px] w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-lg font-bold text-white drop-shadow-lg">
-                    {banner.title}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
@@ -572,137 +557,82 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#e7e7e7] py-16">
-        {/* fade left */}
-        <div className="pointer-events-none absolute left-0 top-0 z-20 h-full w-32 bg-gradient-to-r from-[#e7e7e7] to-transparent" />
-
-        {/* fade right */}
-        <div className="pointer-events-none absolute right-0 top-0 z-20 h-full w-32 bg-gradient-to-l from-[#e7e7e7] to-transparent" />
-
-        <h2 className="mb-10 text-center text-4xl font-semibold tracking-[-0.02em] text-[#1c1c1c] sm:text-5xl">
-          Đánh giá từ khách hàng!
-        </h2>
-
-        <div className="space-y-6">
-          {/* ROW 1 */}
-          <div className="reviews-marquee-row">
-            <div className="reviews-marquee-track reviews-marquee-left">
-              {reviewsTopTrack.map((review, index) => (
-                <article
-                  key={`top-${review.author}-${index}`}
-                  className="reviews-card"
-                >
-                  <p className="text-sm leading-relaxed text-[#454545]">
-                    {review.quote}
-                  </p>
-
-                  <div className="mt-5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-                        style={{ backgroundColor: review.avatar }}
-                      >
-                        {review.author[0]}
-                      </span>
-
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-[#1f1f1f]">
-                          {review.author}
-                        </p>
-                        <p className="text-[11px] text-[#676767]">
-                          {review.note}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="inline-flex items-center gap-1 text-xs text-[#323232]">
-                      {review.score}
-                      <StarIcon className="h-3 w-3 text-[#f3b116]" />
-                    </p>
-                  </div>
-                </article>
-              ))}
+      <section className="bg-[#e7e7e7] py-16">
+        <div className="mx-auto max-w-[1240px] px-4 sm:px-6">
+          {/* Header + arrows */}
+          <div className="mb-10 flex items-center justify-between">
+            <h2 className="text-4xl font-semibold tracking-[-0.02em] text-[#1c1c1c] sm:text-5xl">
+              Đánh giá từ khách hàng!
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={prevReview}
+                aria-label="Đánh giá trước"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#cacaca] bg-white text-[#222] shadow-sm transition hover:bg-[#d90f0f] hover:border-[#d90f0f] hover:text-white"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={nextReview}
+                aria-label="Đánh giá tiếp theo"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#cacaca] bg-white text-[#222] shadow-sm transition hover:bg-[#d90f0f] hover:border-[#d90f0f] hover:text-white"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
             </div>
           </div>
 
-          {/* ROW 2 */}
-          <div className="reviews-marquee-row">
-            <div className="reviews-marquee-track reviews-marquee-right">
-              {reviewsBottomTrack.map((review, index) => (
-                <article
-                  key={`bottom-${review.author}-${index}`}
-                  className="reviews-card"
-                >
-                  <p className="text-sm leading-relaxed text-[#454545]">
-                    {review.quote}
-                  </p>
-
-                  <div className="mt-5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-                        style={{ backgroundColor: review.avatar }}
-                      >
-                        {review.author[0]}
-                      </span>
-
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-[#1f1f1f]">
-                          {review.author}
-                        </p>
-                        <p className="text-[11px] text-[#676767]">
-                          {review.note}
-                        </p>
-                      </div>
+          {/* Cards */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {visibleReviews.map((review, index) => (
+              <article
+                key={`${review.author}-${index}`}
+                className="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <p className="text-sm leading-relaxed text-[#454545]">
+                  {review.quote}
+                </p>
+                <div className="mt-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                      style={{ backgroundColor: review.avatar }}
+                    >
+                      {review.author[0]}
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-[#1f1f1f]">
+                        {review.author}
+                      </p>
+                      <p className="text-[11px] text-[#676767]">{review.note}</p>
                     </div>
-
-                    <p className="inline-flex items-center gap-1 text-xs text-[#323232]">
-                      {review.score}
-                      <StarIcon className="h-3 w-3 text-[#f3b116]" />
-                    </p>
                   </div>
-                </article>
-              ))}
-            </div>
+                  <p className="inline-flex items-center gap-1 text-xs text-[#323232]">
+                    {review.score}
+                    <StarIcon className="h-3 w-3 text-[#f3b116]" />
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
-        </div>
-      </section>
 
-      <section className="bg-[#f3f3f3] py-20">
-        <div className="mx-auto max-w-[780px] px-4 text-center sm:px-6">
-          <div className="mx-auto w-fit text-[#8b8b8b]">
-            <svg viewBox="0 0 220 90" className="h-24 w-56" fill="none">
-              <path
-                d="M18 32c13-9 52-11 76-2 0 0 4 29-33 29S31 38 28 36m174-4c-13-9-52-11-76-2 0 0-4 29 33 29s30-21 33-23m-98-4h42m-108 2c-3 10-8 21-14 26m180-26c3 10 8 21 14 26"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* Dots */}
+          <div className="mt-8 flex justify-center gap-2">
+            {Array.from({ length: totalReviewPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setReviewIndex(i)}
+                aria-label={`Trang ${i + 1}`}
+                className={`h-2 rounded-full transition-all ${
+                  i === reviewIndex ? 'w-6 bg-[#d90f0f]' : 'w-2 bg-[#c0c0c0]'
+                }`}
               />
-            </svg>
+            ))}
           </div>
-          <h2 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#161616] sm:text-5xl">
-            Tham gia Câu lạc bộ Độc quyền
-          </h2>
-          <p className="mt-3 text-sm text-[#5b5b5b] sm:text-base">
-            Xem bộ sưu tập mới nhất và ưu đãi độc quyền trước khi mọi người.
-          </p>
-
-          <form className="mx-auto mt-7 flex max-w-[540px] flex-col gap-3 sm:flex-row">
-            <input
-              type="email"
-              placeholder="email@cuaban.com"
-              className="h-11 flex-1 rounded-full border border-[#e0e0e0] bg-white px-5 text-sm outline-none transition focus:border-[#d90f0f]"
-            />
-            <button
-              type="submit"
-              className="h-11 rounded-full bg-[#2f141c] px-8 text-sm font-medium text-white transition hover:bg-[#0d1322]"
-            >
-              Đăng ký
-            </button>
-          </form>
         </div>
       </section>
+
+
     </div>
   );
 };
