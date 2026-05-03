@@ -1,4 +1,4 @@
-﻿import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import heroWoman from '@/assets/homepage/hero_woman_v2.png';
@@ -169,29 +169,22 @@ const HomePage = () => {
 
   return (
     <div className="bg-white text-[#101010]">
-      {/* ─── HEADER Banner (announcement bar) ─── */}
-      {headerBanners.length > 0 && (
-        <section className="bg-[#361414] text-white">
-          <div className="mx-auto flex max-w-[1240px] items-center justify-center gap-4 px-4 py-2.5 text-center">
-            {headerBanners[0].imageUrl && (
-              <img
-                src={headerBanners[0].imageUrl}
-                alt={headerBanners[0].title}
-                className="h-6 w-6 rounded object-cover"
-              />
-            )}
-            <p className="text-sm font-medium tracking-wide">
-              {headerBanners[0].title}
-            </p>
-            <Link
-              to="/products"
-              className="ml-2 rounded-full border border-white/40 px-4 py-0.5 text-xs font-medium transition hover:bg-white hover:text-[#361414]"
-            >
-              Xem ngay
-            </Link>
+      {/* ─── HARMONIZED SIGNATURE MARQUEE (Burgundy & Gold) ─── */}
+      <section className="relative h-11 bg-[#2D1616] overflow-hidden flex items-center border-b border-[#f2ca52]/20">
+        <div className="w-full overflow-hidden">
+          <div className="animate-marquee flex gap-16 items-center">
+            {Array.from({ length: 25 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-16 whitespace-nowrap">
+                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/90">CCLEARLY</span>
+                <StarIcon className="h-2.5 w-2.5 text-[#f2ca52] opacity-80" />
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+        {/* Luxury Glow Effect */}
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#2D1616] to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#2D1616] to-transparent z-10" />
+      </section>
 
       <section className="relative overflow-hidden bg-[#efefef]">
         <div
@@ -372,11 +365,10 @@ const HomePage = () => {
                       <button
                         key={i}
                         onClick={() => setCurrentSlide(i)}
-                        className={`h-2 rounded-full transition-all ${
-                          i === currentSlide
-                            ? 'w-6 bg-white'
-                            : 'w-2 bg-white/50'
-                        }`}
+                        className={`h-2 rounded-full transition-all ${i === currentSlide
+                          ? 'w-6 bg-white'
+                          : 'w-2 bg-white/50'
+                          }`}
                       />
                     ))}
                   </div>
@@ -425,57 +417,57 @@ const HomePage = () => {
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
               {isLoading
                 ? Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-[280px] animate-pulse rounded-2xl bg-white p-4 shadow-sm"
-                    >
-                      <div className="h-4 w-2/3 rounded bg-gray-100" />
-                      <div className="mt-8 h-24 w-full rounded bg-gray-50" />
-                      <div className="mt-auto h-4 w-1/2 rounded bg-gray-100" />
-                    </div>
-                  ))
+                  <div
+                    key={index}
+                    className="h-[280px] animate-pulse rounded-2xl bg-white p-4 shadow-sm"
+                  >
+                    <div className="h-4 w-2/3 rounded bg-gray-100" />
+                    <div className="mt-8 h-24 w-full rounded bg-gray-50" />
+                    <div className="mt-auto h-4 w-1/2 rounded bg-gray-100" />
+                  </div>
+                ))
                 : bestSellingItems.map((item) => (
-                    <article
-                      key={item.id || item.name}
-                      className="rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(13,22,39,0.06)] transition hover:shadow-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          {item.colors.map((tone) => (
-                            <span
-                              key={tone}
-                              className="h-3 w-3 rounded-full border border-white shadow"
-                              style={{ backgroundColor: tone }}
-                            />
-                          ))}
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 text-[11px] text-[#3f3f3f]">
-                          {item.rating}
-                          <StarIcon className="h-3 w-3 text-[#f3b116]" />
-                        </span>
+                  <article
+                    key={item.id || item.name}
+                    className="rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(13,22,39,0.06)] transition hover:shadow-lg"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {item.colors.map((tone) => (
+                          <span
+                            key={tone}
+                            className="h-3 w-3 rounded-full border border-white shadow"
+                            style={{ backgroundColor: tone }}
+                          />
+                        ))}
                       </div>
 
-                      <div className="mt-5">
-                        <GlassesSketch stroke={item.stroke} />
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#3f3f3f]">
+                        {item.rating}
+                        <StarIcon className="h-3 w-3 text-[#f3b116]" />
+                      </span>
+                    </div>
+
+                    <div className="mt-5">
+                      <GlassesSketch stroke={item.stroke} />
+                    </div>
+
+                    <div className="mt-2 flex items-end justify-between">
+                      <div>
+                        <p className="text-[11px] text-[#868686]">
+                          {item.name}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-[#222]">
+                          {item.price}
+                        </p>
                       </div>
 
-                      <div className="mt-2 flex items-end justify-between">
-                        <div>
-                          <p className="text-[11px] text-[#868686]">
-                            {item.name}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-[#222]">
-                            {item.price}
-                          </p>
-                        </div>
-
-                        <span className="rounded-md border border-[#d9d9d9] px-1.5 py-0.5 text-[10px] text-[#646464]">
-                          {item.size}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
+                      <span className="rounded-md border border-[#d9d9d9] px-1.5 py-0.5 text-[10px] text-[#646464]">
+                        {item.size}
+                      </span>
+                    </div>
+                  </article>
+                ))}
             </div>
           </div>
         </div>
@@ -506,32 +498,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ─── HOME_PROMO Banner ─── */}
-      {promoBanners.length > 0 && (
-        <section className="bg-[#f8f8f8]">
-          <div className="mx-auto grid max-w-[1240px] gap-4 px-4 py-6 sm:px-6 sm:grid-cols-2 lg:grid-cols-3">
-            {promoBanners.map((banner) => (
-              <Link
-                key={banner.bannerId}
-                to="/products"
-                className="group relative overflow-hidden rounded-2xl shadow-md transition hover:shadow-xl"
-              >
-                <img
-                  src={banner.imageUrl}
-                  alt={banner.title}
-                  className="h-[180px] w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-lg font-bold text-white drop-shadow-lg">
-                    {banner.title}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
@@ -668,41 +635,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="bg-[#f3f3f3] py-20">
-        <div className="mx-auto max-w-[780px] px-4 text-center sm:px-6">
-          <div className="mx-auto w-fit text-[#8b8b8b]">
-            <svg viewBox="0 0 220 90" className="h-24 w-56" fill="none">
-              <path
-                d="M18 32c13-9 52-11 76-2 0 0 4 29-33 29S31 38 28 36m174-4c-13-9-52-11-76-2 0 0-4 29 33 29s30-21 33-23m-98-4h42m-108 2c-3 10-8 21-14 26m180-26c3 10 8 21 14 26"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#161616] sm:text-5xl">
-            Tham gia Câu lạc bộ Độc quyền
-          </h2>
-          <p className="mt-3 text-sm text-[#5b5b5b] sm:text-base">
-            Xem bộ sưu tập mới nhất và ưu đãi độc quyền trước khi mọi người.
-          </p>
-
-          <form className="mx-auto mt-7 flex max-w-[540px] flex-col gap-3 sm:flex-row">
-            <input
-              type="email"
-              placeholder="email@cuaban.com"
-              className="h-11 flex-1 rounded-full border border-[#e0e0e0] bg-white px-5 text-sm outline-none transition focus:border-[#d90f0f]"
-            />
-            <button
-              type="submit"
-              className="h-11 rounded-full bg-[#2f141c] px-8 text-sm font-medium text-white transition hover:bg-[#0d1322]"
-            >
-              Đăng ký
-            </button>
-          </form>
-        </div>
-      </section>
     </div>
   );
 };
