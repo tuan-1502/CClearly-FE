@@ -1,4 +1,4 @@
-﻿import {
+import {
   Search,
   Eye,
   Edit2,
@@ -41,6 +41,10 @@ const SalesOrdersPage = () => {
   const totalItems = ordersData?.meta?.totalElements || orders.length;
   const totalPages =
     ordersData?.meta?.totalPages || Math.ceil(totalItems / pageSize);
+
+  // All orders for accurate stat card counts (not limited by pagination)
+  const { data: allOrdersData } = useAdminOrders({ size: 1000 });
+  const allOrders = allOrdersData?.items || [];
 
   const savePrescriptionMutation = useSavePrescription();
   const updateStatusMutation = useUpdateOrderStatus();
@@ -194,28 +198,28 @@ const SalesOrdersPage = () => {
         {[
           {
             label: 'Chờ xác nhận',
-            val: orders.filter((o) => o.status === 'PENDING').length,
+            val: allOrders.filter((o) => o.status === 'PENDING').length,
             icon: Clock,
             color: 'text-yellow-600',
             bg: 'bg-yellow-50',
           },
           {
             label: 'Đã xác nhận',
-            val: orders.filter((o) => o.status === 'CONFIRMED').length,
+            val: allOrders.filter((o) => o.status === 'CONFIRMED').length,
             icon: CheckCircle,
             color: 'text-red-600',
             bg: 'bg-blue-50',
           },
           {
             label: 'Đang giao',
-            val: orders.filter((o) => o.status === 'SHIPPED').length,
+            val: allOrders.filter((o) => o.status === 'SHIPPED').length,
             icon: Truck,
             color: 'text-purple-600',
             bg: 'bg-purple-50',
           },
           {
             label: 'Đã giao',
-            val: orders.filter((o) => o.status === 'DELIVERED').length,
+            val: allOrders.filter((o) => o.status === 'DELIVERED').length,
             icon: TrendingUp,
             color: 'text-green-600',
             bg: 'bg-green-50',
