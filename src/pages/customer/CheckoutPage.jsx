@@ -449,7 +449,7 @@ const CheckoutPage = () => {
               <span className="font-medium text-red-800">Đơn kính đính kèm</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {checkoutItems.filter((item) => hasPrescription(item)).map((item) => (
+              {items.filter((item) => hasPrescription(item)).map((item) => (
                 <div
                   key={item.cartItemId}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-700"
@@ -464,7 +464,7 @@ const CheckoutPage = () => {
 
         {/* Prescription detail cards */}
         {hasPrescriptionItems &&
-          checkoutItems.filter((item) => hasPrescription(item)).map((item) => {
+          items.filter((item) => hasPrescription(item)).map((item) => {
             const rxKey = item.variantId || item.cartItemId;
             const rx =
               prescriptions[item.variantId] || prescriptions[item.cartItemId];
@@ -1077,7 +1077,7 @@ const CheckoutPage = () => {
                       {(() => {
                         const img = item.imageUrl || (item.images && item.images[0]) || item.productImage || item.thumbnail;
                         const src = typeof img === 'object' ? img.url : img;
-                        
+
                         return src ? (
                           <img
                             src={src}

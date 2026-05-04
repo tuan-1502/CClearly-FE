@@ -1,4 +1,4 @@
-﻿import {
+import {
   Users,
   DollarSign,
   Package,
@@ -410,7 +410,7 @@ const ManagerDashboardPage = () => {
                   </div>
                   <span className="text-red-600 font-bold text-sm whitespace-nowrap">
                     {coupon.discountType === 'PERCENT' ||
-                    coupon.discountType === 'PERCENTAGE'
+                      coupon.discountType === 'PERCENTAGE'
                       ? `${coupon.value}%`
                       : formatCurrency(coupon.value || 0)}
                   </span>

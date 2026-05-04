@@ -30,7 +30,7 @@ export const useCart = (options = {}) => {
       isLoading: false,
       isError: false,
       error: null,
-      refetch: () => {},
+      refetch: () => { },
     };
   }
 

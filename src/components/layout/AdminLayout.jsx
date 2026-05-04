@@ -1,4 +1,4 @@
-﻿import {
+import {
   Home,
   ShoppingCart,
   Package,
@@ -126,7 +126,7 @@ export const AdminLayout = () => {
             >
               <svg
                 viewBox="0 0 120 40"
-                className="h-7 w-12 text-[#1f7a5a]"
+                className="h-7 w-12 text-[#d90f0f]"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
@@ -135,8 +135,8 @@ export const AdminLayout = () => {
                 <circle cx="66" cy="20" r="12" />
                 <path d="M46 20h8" strokeLinecap="round" />
               </svg>
-              <span className="text-xl font-bold tracking-tight text-[#1f7a5a]">
-                CCLEARLY
+              <span className="text-xl font-bold tracking-tight text-[#d90f0f]">
+                CClearly
               </span>
             </Link>
           )}
@@ -160,7 +160,7 @@ export const AdminLayout = () => {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${
                 location.pathname === item.path
-                  ? 'bg-[#1f7a5a] text-white'
+                  ? 'bg-[#d90f0f] text-white'
                   : 'text-[#4f5562] hover:bg-[#f3f3f3]'
               }`}
             >
@@ -180,7 +180,7 @@ export const AdminLayout = () => {
               className="flex items-center gap-3 overflow-hidden hover:opacity-80 transition-opacity"
               title="Trang cá nhân"
             >
-              <div className="w-10 h-10 bg-[#1f7a5a] rounded-full flex items-center justify-center text-white font-bold shrink-0">
+              <div className="w-10 h-10 bg-[#d90f0f] rounded-full flex items-center justify-center text-white font-bold shrink-0">
                 {(user?.fullName || user?.name || 'A').charAt(0)}
               </div>
               {sidebarOpen && (

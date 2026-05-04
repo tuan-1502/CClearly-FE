@@ -1,4 +1,4 @@
-﻿import { Lock, Package, X, MapPin, Phone, User } from 'lucide-react';
+import { Lock, Package, X, MapPin, Phone, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -216,8 +216,7 @@ const OrderHistoryPage = () => {
                           </span>
                           <span className="font-medium text-[#222]">
                             {formatCurrency(
-                              order.items[0]?.unitPrice *
-                                order.items[0]?.quantity
+                              order.items[0]?.unitPrice
                             )}
                           </span>
                         </div>
@@ -338,7 +337,7 @@ const OrderHistoryPage = () => {
                         </p>
                       </div>
                       <p className="font-medium text-[#222]">
-                        {formatCurrency(item.unitPrice * item.quantity)}
+                        {formatCurrency(item.unitPrice)}
                       </p>
                     </div>
                   ))}
