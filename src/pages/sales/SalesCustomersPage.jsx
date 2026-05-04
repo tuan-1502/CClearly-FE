@@ -1,4 +1,4 @@
-﻿// Sales Customers Page - Quản lý khách hàng
+// Sales Customers Page - Quản lý khách hàng
 import {
   Search,
   User,
@@ -53,21 +53,21 @@ const SalesCustomersPage = () => {
       (cust.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (cust.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (cust.phoneNumber || '').includes(searchTerm);
-    
+
     const matchStatus =
       statusFilter === 'all' ||
       cust.status?.toUpperCase() === statusFilter;
-    
+
     // Range filter for spending
     const min = minSpending ? parseFloat(minSpending) : 0;
     const max = maxSpending ? parseFloat(maxSpending) : Infinity;
     const matchSpending = cust.totalSpent >= min && cust.totalSpent <= max;
-    
+
     // Range filter for orders
     const minOrd = minOrders ? parseInt(minOrders) : 0;
     const maxOrd = maxOrders ? parseInt(maxOrders) : Infinity;
     const matchOrders = cust.totalOrders >= minOrd && cust.totalOrders <= maxOrd;
-    
+
     return matchSearch && matchStatus && matchSpending && matchOrders;
   });
 
@@ -89,11 +89,10 @@ const SalesCustomersPage = () => {
     const isActive = status?.toUpperCase() === 'ACTIVE';
     return (
       <span
-        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-          isActive
+        className={`px-2.5 py-1 rounded-full text-xs font-medium ${isActive
             ? 'bg-green-50 text-green-700 border border-green-200'
             : 'bg-gray-50 text-gray-600 border border-gray-200'
-        }`}
+          }`}
       >
         {isActive ? 'Hoạt động' : 'Không hoạt động'}
       </span>
@@ -295,11 +294,10 @@ const SalesCustomersPage = () => {
               <div
                 key={cust.userId}
                 onClick={() => setSelectedCustomer(cust)}
-                className={`bg-white rounded-xl p-6 shadow-sm cursor-pointer transition ${
-                  selectedCustomer?.userId === cust.userId
+                className={`bg-white rounded-xl p-6 shadow-sm cursor-pointer transition ${selectedCustomer?.userId === cust.userId
                     ? 'ring-2 ring-[#d90f0f]'
                     : 'hover:shadow-md'
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-[#d90f0f] rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
@@ -438,10 +436,10 @@ const SalesCustomersPage = () => {
                     )}
                     {getCustomerOrders(selectedCustomer.userId).length ===
                       0 && (
-                      <p className="text-sm text-[#4f5562] text-center py-4">
-                        Chưa có đơn hàng
-                      </p>
-                    )}
+                        <p className="text-sm text-[#4f5562] text-center py-4">
+                          Chưa có đơn hàng
+                        </p>
+                      )}
                   </div>
                 </div>
 

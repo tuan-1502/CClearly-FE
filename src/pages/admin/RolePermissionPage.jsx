@@ -1,4 +1,4 @@
-﻿import { Shield, User, Lock, Settings, Loader2 } from 'lucide-react';
+import { Shield, User, Lock, Settings, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import {
