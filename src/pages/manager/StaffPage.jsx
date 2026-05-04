@@ -46,43 +46,56 @@ const emptyForm = {
 };
 
 const StaffPage = () => {
-  const [filters, setFilters] = useState({
-    page: 1,
-    size: 20,
-    search: '',
-    role: 'all',
-  });
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [lockModal, setLockModal] = useState({ isOpen: false, user: null });
 
   const { user: currentUser } = useAuth();
-  const { data, isLoading } = useAdminUsers({
-    page: filters.page,
-    size: filters.size,
-    search: filters.search,
-    role: filters.role === 'all' ? '' : filters.role,
-  });
 
+  // Fetch ALL users — filtering is done client-side so phone search works
+  const { data, isLoading } = useAdminUsers({ size: 9999 });
   const allUsers = Array.isArray(data) ? data : data?.content || [];
-  const totalPages = data?.totalPages || 1;
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
-  const staff = (Array.isArray(allUsers) ? allUsers : allUsers || [])
+  // ── Client-side filter + sort ──
+  const filtered = allUsers
+    .filter((u) => (u.role?.toUpperCase() || '') !== 'CUSTOMER')
     .filter((u) => {
-      const role = u.role?.toUpperCase() || '';
-      return role !== 'CUSTOMER';
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (u.fullName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.phoneNumber || '').includes(search.trim())
+      );
+    })
+    .filter((u) => {
+      if (roleFilter === 'all') return true;
+      return (u.role?.toUpperCase() || '') === roleFilter;
+    })
+    .filter((u) => {
+      if (statusFilter === 'all') return true;
+      return (u.status?.toUpperCase() || '') === statusFilter;
     })
     .sort((a, b) => {
       if (sortOption === 'name-asc') return (a.fullName || '').localeCompare(b.fullName || '', 'vi');
       if (sortOption === 'name-desc') return (b.fullName || '').localeCompare(a.fullName || '', 'vi');
-      if (sortOption === 'newest') return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-      return 0; // Default logic
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
+
+  // ── Client-side pagination ──
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const staff = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   // ── Open modal ──
   const handleOpenCreate = () => {
@@ -171,30 +184,27 @@ const StaffPage = () => {
             <input
               type="text"
               placeholder="Tìm theo tên, email, SĐT..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-12 pr-4 py-3 bg-[#f9f9f9] border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0f5dd9] transition"
             />
           </div>
 
-          {/* <div className="bg-[#f9f9f9] border border-gray-200 rounded-full px-6 py-3 text-sm flex items-center gap-2">
-            <TrendingUp size={16} className="text-gray-400" /> */}
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="bg-[#f9f9f9] border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none"
-            >
-              <option value="newest">Mới nhất</option>
-              <option value="name-asc">Tên (A-Z)</option>
-              <option value="name-desc">Tên (Z-A)</option>
-            </select>
-          {/* </div> */}
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="bg-[#f9f9f9] border border-gray-200 rounded-full px-6 py-3 text-sm focus:outline-none"
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="name-asc">Tên (A-Z)</option>
+            <option value="name-desc">Tên (Z-A)</option>
+          </select>
 
           <div className="bg-[#f9f9f9] border border-gray-200 rounded-full px-6 py-3 text-sm flex items-center gap-2">
             <Filter size={16} className="text-gray-400" />
             <select
-              value={filters.role}
-              onChange={(e) => setFilters({ ...filters, role: e.target.value, page: 1 })}
+              value={roleFilter}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
               className="outline-none bg-transparent"
             >
               <option value="all">Tất cả vai trò</option>
@@ -202,6 +212,19 @@ const StaffPage = () => {
               <option value="MANAGER">Quản lý</option>
               <option value="SALES_STAFF">Bán hàng</option>
               <option value="OPERATION_STAFF">Vận hành</option>
+            </select>
+          </div>
+
+          <div className="bg-[#f9f9f9] border border-gray-200 rounded-full px-6 py-3 text-sm flex items-center gap-2">
+            <Filter size={16} className="text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="outline-none bg-transparent"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang hoạt động</option>
+              <option value="INACTIVE">Không hoạt động</option>
             </select>
           </div>
         </div>
@@ -318,35 +341,27 @@ const StaffPage = () => {
           <div className="p-6 border-t border-[#ececec] flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-[#4f5562]">Số nhân sự: <strong>{staff.length}</strong></span>
+                <span className="text-sm text-[#4f5562]">Số nhân sự: <strong>{filtered.length}</strong></span>
                 <span className="text-sm text-[#4f5562] ml-4">Số bản ghi mỗi trang:</span>
                 <select
-                  value={filters.size}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      size: Number(e.target.value),
-                      page: 1,
-                    })
-                  }
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
                   className="px-3 py-1.5 border border-[#e0e0e0] rounded-lg text-sm focus:outline-none focus:border-[#d90f0f] bg-white cursor-pointer"
                 >
-                  {PAGE_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
+                  {PAGE_SIZES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-[#4f5562]">
-                Trang <strong>{filters.page}</strong> / {totalPages}
+                Trang <strong>{safePage}</strong> / {totalPages}
               </span>
               <Pagination
-                currentPage={filters.page}
+                currentPage={safePage}
                 totalPages={totalPages}
-                onPageChange={(page) => setFilters({ ...filters, page })}
+                onPageChange={(p) => setPage(p)}
               />
             </div>
           </div>
