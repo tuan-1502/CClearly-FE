@@ -179,16 +179,29 @@ const HomePage = () => {
 
   return (
     <div className="bg-white text-[#101010]">
-      {/* ─── HEADER Banner (announcement bar) ─── */}
-      <section className="bg-[#1a0b0b] text-white overflow-hidden py-1 border-b border-white/5">
-        <div className="animate-marquee flex items-center whitespace-nowrap">
-          {/* Repeat content for seamless loop */}
-          {[...Array(20)].map((_, i) => (
-            <span key={i} className="text-[#f3c954] font-bold text-xs italic tracking-[0.2em] uppercase pr-32">
-              CClearly
-            </span>
+      <section className="bg-[#1a0505] text-white py-2 border-b border-white/5 overflow-hidden relative">
+        <div className="flex items-center whitespace-nowrap animate-marquee-fast">
+          {Array(20).fill(0).map((_, i) => (
+            <div key={i} className="flex items-center">
+              <span className="text-[13px] font-bold tracking-[0.3em] uppercase">
+                CCLEARLY
+              </span>
+              <span className="mx-10 text-white/30">•</span>
+            </div>
           ))}
         </div>
+
+        <style>{`
+          @keyframes marquee-fast {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee-fast {
+            display: flex;
+            width: fit-content;
+            animation: marquee-fast 20s linear infinite;
+          }
+        `}</style>
       </section>
 
       <section className="relative overflow-hidden bg-[#efefef]">

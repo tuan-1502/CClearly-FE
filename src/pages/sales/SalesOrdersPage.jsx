@@ -32,6 +32,7 @@ const SalesOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Paginated orders for table display
   const { data: ordersData } = useAdminOrders({
     status: statusFilter !== 'all' ? statusFilter : undefined,
     page: currentPage,

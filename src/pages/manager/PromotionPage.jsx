@@ -72,10 +72,20 @@ const PromotionPage = () => {
   const handleCouponSubmit = (e) => {
     e.preventDefault();
 
+    const numValue = Number(couponFormData.value);
+
+    // Validate: phần trăm phải trong khoảng 0 - 100
+    if (couponFormData.discountType === 'PERCENT') {
+      if (numValue < 0 || numValue > 100) {
+        alert('Giá trị phần trăm phải nằm trong khoảng từ 0 đến 100.');
+        return;
+      }
+    }
+
     const payload = {
       code: couponFormData.code,
       discountType: couponFormData.discountType,
-      value: Number(couponFormData.value),
+      value: numValue,
       minOrder: Number(couponFormData.minOrder) || 0,
       maxDiscount: Number(couponFormData.maxDiscount) || 0,
       usageLimit: couponFormData.usageLimit
@@ -690,16 +700,24 @@ const PromotionPage = () => {
                   <input
                     type="number"
                     value={couponFormData.value}
-                    onChange={(e) =>
-                      setCouponFormData({
-                        ...couponFormData,
-                        value: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      if (couponFormData.discountType === 'PERCENT') {
+                        const num = Number(val);
+                        if (num > 100) val = '100';
+                        if (num < 0) val = '0';
+                      }
+                      setCouponFormData({ ...couponFormData, value: val });
+                    }}
                     className="w-full border rounded-lg px-3 py-2 text-sm"
                     min="0"
+                    max={couponFormData.discountType === 'PERCENT' ? 100 : undefined}
+                    step={couponFormData.discountType === 'PERCENT' ? 1 : undefined}
                     required
                   />
+                  {couponFormData.discountType === 'PERCENT' && (
+                    <p className="mt-1 text-xs text-gray-400">Nhập từ 0 đến 100 (%)</p>
+                  )}
                 </div>
               </div>
 
