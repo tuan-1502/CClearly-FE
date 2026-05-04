@@ -383,11 +383,10 @@ const HomePage = () => {
                       <button
                         key={i}
                         onClick={() => setCurrentSlide(i)}
-                        className={`h-2 rounded-full transition-all ${
-                          i === currentSlide
+                        className={`h-2 rounded-full transition-all ${i === currentSlide
                             ? 'w-6 bg-white'
                             : 'w-2 bg-white/50'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -436,57 +435,57 @@ const HomePage = () => {
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
               {isLoading
                 ? Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-[280px] animate-pulse rounded-2xl bg-white p-4 shadow-sm"
-                    >
-                      <div className="h-4 w-2/3 rounded bg-gray-100" />
-                      <div className="mt-8 h-24 w-full rounded bg-gray-50" />
-                      <div className="mt-auto h-4 w-1/2 rounded bg-gray-100" />
-                    </div>
-                  ))
+                  <div
+                    key={index}
+                    className="h-[280px] animate-pulse rounded-2xl bg-white p-4 shadow-sm"
+                  >
+                    <div className="h-4 w-2/3 rounded bg-gray-100" />
+                    <div className="mt-8 h-24 w-full rounded bg-gray-50" />
+                    <div className="mt-auto h-4 w-1/2 rounded bg-gray-100" />
+                  </div>
+                ))
                 : bestSellingItems.map((item) => (
-                    <article
-                      key={item.id || item.name}
-                      className="rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(13,22,39,0.06)] transition hover:shadow-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          {item.colors.map((tone) => (
-                            <span
-                              key={tone}
-                              className="h-3 w-3 rounded-full border border-white shadow"
-                              style={{ backgroundColor: tone }}
-                            />
-                          ))}
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 text-[11px] text-[#3f3f3f]">
-                          {item.rating}
-                          <StarIcon className="h-3 w-3 text-[#f3b116]" />
-                        </span>
+                  <article
+                    key={item.id || item.name}
+                    className="rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(13,22,39,0.06)] transition hover:shadow-lg"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {item.colors.map((tone) => (
+                          <span
+                            key={tone}
+                            className="h-3 w-3 rounded-full border border-white shadow"
+                            style={{ backgroundColor: tone }}
+                          />
+                        ))}
                       </div>
 
-                      <div className="mt-5">
-                        <GlassesSketch stroke={item.stroke} />
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#3f3f3f]">
+                        {item.rating}
+                        <StarIcon className="h-3 w-3 text-[#f3b116]" />
+                      </span>
+                    </div>
+
+                    <div className="mt-5">
+                      <GlassesSketch stroke={item.stroke} />
+                    </div>
+
+                    <div className="mt-2 flex items-end justify-between">
+                      <div>
+                        <p className="text-[11px] text-[#868686]">
+                          {item.name}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-[#222]">
+                          {item.price}
+                        </p>
                       </div>
 
-                      <div className="mt-2 flex items-end justify-between">
-                        <div>
-                          <p className="text-[11px] text-[#868686]">
-                            {item.name}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-[#222]">
-                            {item.price}
-                          </p>
-                        </div>
-
-                        <span className="rounded-md border border-[#d9d9d9] px-1.5 py-0.5 text-[10px] text-[#646464]">
-                          {item.size}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
+                      <span className="rounded-md border border-[#d9d9d9] px-1.5 py-0.5 text-[10px] text-[#646464]">
+                        {item.size}
+                      </span>
+                    </div>
+                  </article>
+                ))}
             </div>
           </div>
         </div>
@@ -624,9 +623,8 @@ const HomePage = () => {
                 key={i}
                 onClick={() => setReviewIndex(i)}
                 aria-label={`Trang ${i + 1}`}
-                className={`h-2 rounded-full transition-all ${
-                  i === reviewIndex ? 'w-6 bg-[#d90f0f]' : 'w-2 bg-[#c0c0c0]'
-                }`}
+                className={`h-2 rounded-full transition-all ${i === reviewIndex ? 'w-6 bg-[#d90f0f]' : 'w-2 bg-[#c0c0c0]'
+                  }`}
               />
             ))}
           </div>
