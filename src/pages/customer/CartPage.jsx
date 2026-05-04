@@ -252,17 +252,17 @@ const CartPage = () => {
               <label className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition">
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${selectedIds.length === items.length && items.length > 0
-                      ? 'bg-[#d90f0f] border-[#d90f0f]'
-                      : 'border-gray-300 bg-white'
+                    ? 'bg-[#d90f0f] border-[#d90f0f]'
+                    : 'border-gray-300 bg-white'
                     }`}
                 >
                   {selectedIds.length === items.length && items.length > 0 && (
                     <Check size={14} className="text-white" strokeWidth={3} />
                   )}
                 </div>
-                <input 
-                  type="checkbox" 
-                  className="hidden" 
+                <input
+                  type="checkbox"
+                  className="hidden"
                   checked={selectedIds.length === items.length}
                   onChange={handleSelectAll}
                 />
@@ -294,17 +294,17 @@ const CartPage = () => {
                       <label className="cursor-pointer group">
                         <div
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${selectedIds.includes(item.cartItemId)
-                              ? 'bg-[#d90f0f] border-[#d90f0f]'
-                              : 'border-gray-300 bg-white hover:border-[#d90f0f]'
+                            ? 'bg-[#d90f0f] border-[#d90f0f]'
+                            : 'border-gray-300 bg-white hover:border-[#d90f0f]'
                             }`}
                         >
                           {selectedIds.includes(item.cartItemId) && (
                             <Check size={14} className="text-white" strokeWidth={3} />
                           )}
                         </div>
-                        <input 
-                          type="checkbox" 
-                          className="hidden" 
+                        <input
+                          type="checkbox"
+                          className="hidden"
                           checked={selectedIds.includes(item.cartItemId)}
                           onChange={() => toggleSelect(item.cartItemId)}
                         />
@@ -316,7 +316,7 @@ const CartPage = () => {
                       {(() => {
                         const img = item.imageUrl || (item.images && item.images[0]) || item.productImage || item.thumbnail;
                         const src = typeof img === 'object' ? img.url : img;
-                        
+
                         return src ? (
                           <img
                             src={src}

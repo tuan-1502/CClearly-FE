@@ -179,29 +179,30 @@ const HomePage = () => {
 
   return (
     <div className="bg-white text-[#101010]">
-      {/* ─── HEADER Banner (announcement bar) ─── */}
-      {headerBanners.length > 0 && (
-        <section className="bg-[#361414] text-white">
-          <div className="mx-auto flex max-w-[1240px] items-center justify-center gap-4 px-4 py-2.5 text-center">
-            {headerBanners[0].imageUrl && (
-              <img
-                src={headerBanners[0].imageUrl}
-                alt={headerBanners[0].title}
-                className="h-6 w-6 rounded object-cover"
-              />
-            )}
-            <p className="text-sm font-medium tracking-wide">
-              {headerBanners[0].title}
-            </p>
-            <Link
-              to="/products"
-              className="ml-2 rounded-full border border-white/40 px-4 py-0.5 text-xs font-medium transition hover:bg-white hover:text-[#361414]"
-            >
-              Xem ngay
-            </Link>
-          </div>
-        </section>
-      )}
+      <section className="bg-[#1a0505] text-white py-2 border-b border-white/5 overflow-hidden relative">
+        <div className="flex items-center whitespace-nowrap animate-marquee-fast">
+          {Array(20).fill(0).map((_, i) => (
+            <div key={i} className="flex items-center">
+              <span className="text-[13px] font-bold tracking-[0.3em] uppercase">
+                CCLEARLY
+              </span>
+              <span className="mx-10 text-white/30">•</span>
+            </div>
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes marquee-fast {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee-fast {
+            display: flex;
+            width: fit-content;
+            animation: marquee-fast 20s linear infinite;
+          }
+        `}</style>
+      </section>
 
       <section className="relative overflow-hidden bg-[#efefef]">
         <div

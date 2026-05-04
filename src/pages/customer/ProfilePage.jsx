@@ -1,4 +1,4 @@
-﻿import {
+import {
   Lock,
   User,
   LogOut,
@@ -463,10 +463,7 @@ const ProfilePage = () => {
                                   </div>
                                   <span className="font-medium text-[#222] flex-shrink-0">
                                     x{order.items[0]?.quantity} ·{' '}
-                                    {formatCurrency(
-                                      order.items[0]?.unitPrice *
-                                        order.items[0]?.quantity
-                                    )}
+                                    {formatCurrency(order.items[0]?.unitPrice)}
                                   </span>
                                 </div>
                                 {order.items.length > 1 && (
@@ -691,7 +688,7 @@ const ProfilePage = () => {
                                 </div>
                                 <p className="font-medium text-[#222] flex-shrink-0">
                                   {formatCurrency(
-                                    item.unitPrice * item.quantity
+                                    item.unitPrice
                                   )}
                                 </p>
                               </div>
