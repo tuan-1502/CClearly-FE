@@ -147,7 +147,7 @@ function AppRoutes() {
         <Route path="/orders" element={<OrderHistoryPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/returns" element={<ReturnPage />} />
+        <Route path="/return-request" element={<ReturnPage />} />
         <Route path="/notifications" element={<NotificationPage />} />
       </Route>
 

@@ -19,5 +19,11 @@ export const handleErrorApi = ({ error, setError }) => {
     return;
   }
 
+  const serverMessage = error?.payload?.message || error?.message;
+  if (serverMessage) {
+    toast.error(serverMessage);
+    return;
+  }
+
   toast.error('Có lỗi không xác định xảy ra');
 };

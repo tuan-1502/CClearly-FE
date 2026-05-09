@@ -1,4 +1,4 @@
-﻿import {
+import {
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -19,13 +19,16 @@ import {
   Cell,
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminDashboard } from '@/hooks/useAdmin';
+import { useAdminDashboard, useAdminRevenue } from '@/hooks/useAdmin';
 import { useInventory } from '@/hooks/useInventory';
+import { useState } from 'react';
 
 const ManagerReportsPage = () => {
   const { user } = useAuth();
   const { data: stats = {} } = useAdminDashboard();
+  const { data: revenueData } = useAdminRevenue({ days: 30 });
   const { data: inventoryItems = [] } = useInventory();
+  const [revenueView, setRevenueView] = useState('month'); // 'month' or 'quarter'
 
   const formatCurrency = (v) =>
     new Intl.NumberFormat('vi-VN', {
@@ -64,17 +67,17 @@ const ManagerReportsPage = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex justify-between mb-3">
             <DollarSign className="text-green-600" />
-            <span className="text-green-600 flex items-center gap-1 text-sm">
-              <TrendingUp size={16} />
-              12.5%
+            <span className={`flex items-center gap-1 text-sm ${Number(revenueData?.quarterGrowthPercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {Number(revenueData?.quarterGrowthPercent || 0) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              {Math.abs(Number(revenueData?.quarterGrowthPercent || 0)).toFixed(1)}%
             </span>
           </div>
 
           <p className="text-2xl font-bold">
-            {formatCurrency(stats.totalRevenue || 0)}
+            {formatCurrency(revenueData?.thisQuarterRevenue || 0)}
           </p>
 
-          <p className="text-sm text-gray-500">Doanh thu</p>
+          <p className="text-sm text-gray-500">Doanh thu quý này</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -126,13 +129,36 @@ const ManagerReportsPage = () => {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* REVENUE */}
         <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h3 className="font-semibold mb-4 flex gap-2 items-center">
-            <BarChart3 size={18} /> Doanh thu theo tháng
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold flex gap-2 items-center">
+              <BarChart3 size={18} />
+              Doanh thu {revenueView === 'month' ? 'theo tháng' : 'theo quý'}
+            </h3>
+            <div className="flex bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setRevenueView('month')}
+                className={`px-3 py-1 text-xs rounded-md transition ${revenueView === 'month' ? 'bg-white shadow-sm text-blue-600 font-bold' : 'text-gray-500'}`}
+              >
+                Tháng
+              </button>
+              <button
+                onClick={() => setRevenueView('quarter')}
+                className={`px-3 py-1 text-xs rounded-md transition ${revenueView === 'quarter' ? 'bg-white shadow-sm text-blue-600 font-bold' : 'text-gray-500'}`}
+              >
+                Quý
+              </button>
+            </div>
+          </div>
 
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={stats.revenueByMonth || []}>
-              <XAxis dataKey="month" />
+            <BarChart
+              data={
+                revenueView === 'month'
+                  ? stats.revenueByMonth || []
+                  : stats.revenueByQuarter || []
+              }
+            >
+              <XAxis dataKey={revenueView === 'month' ? 'month' : 'quarter'} />
 
               <YAxis />
 

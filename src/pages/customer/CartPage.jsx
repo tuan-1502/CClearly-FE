@@ -32,6 +32,12 @@ const CartPage = () => {
   const removeCartItem = useRemoveCartItem();
   const clearCart = useClearCart();
 
+  // Clear buy-now mode when entering cart to ensure regular checkout flow
+  useEffect(() => {
+    sessionStorage.removeItem('buyNowMode');
+    sessionStorage.removeItem('buyNowItem');
+  }, []);
+
   const [prescriptions, setPrescriptions] = useState({});
   const [expandedRx, setExpandedRx] = useState({});
   const [selectedIds, setSelectedIds] = useState([]);
@@ -638,6 +644,8 @@ const CartPage = () => {
                   }
 
                   sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
+                  sessionStorage.removeItem('buyNowMode');
+                  sessionStorage.removeItem('buyNowItem');
                   navigate('/checkout');
                 }}
                 disabled={selectedIds.length === 0}

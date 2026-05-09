@@ -35,6 +35,7 @@ const AdminDashboard = () => {
   const { socket } = useSocket();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [revenueView, setRevenueView] = useState('month'); // 'month' or 'quarter'
 
   // Update clock every minute
   useEffect(() => {
@@ -96,19 +97,26 @@ const AdminDashboard = () => {
 
   const statusData = stats?.ordersByStatus
     ? Object.entries(stats.ordersByStatus).map(([name, value]) => ({
-        name:
-          name === 'PENDING'
-            ? 'Chờ xử lý'
-            : name === 'PROCESSING'
-              ? 'Đang gia công'
-              : name === 'DELIVERED'
-                ? 'Hoàn thành'
-                : name === 'CANCELLED'
-                  ? 'Đã hủy'
-                  : name,
-        value,
-      }))
+      name:
+        name === 'PENDING'
+          ? 'Chờ xử lý'
+          : name === 'PROCESSING'
+            ? 'Đang gia công'
+            : name === 'DELIVERED'
+              ? 'Hoàn thành'
+              : name === 'CANCELLED'
+                ? 'Đã hủy'
+                : name,
+      value,
+    }))
     : [];
+
+  const totalOrdersForPie = statusData.reduce((acc, curr) => acc + curr.value, 0);
+
+  const statusDataWithPercent = statusData.map(item => ({
+    ...item,
+    percent: totalOrdersForPie > 0 ? ((item.value / totalOrdersForPie) * 100).toFixed(1) : 0
+  }));
 
   const getStatusBadge = (status) => {
     const s = status?.toUpperCase();
@@ -187,12 +195,12 @@ const AdminDashboard = () => {
 
             <StatCard
               icon={<DollarSignIcon className="text-orange-600" />}
-              title="Doanh thu"
+              title="Doanh thu quý này"
               value={
-                (Number(stats?.totalRevenue ?? 0) / 1000000).toFixed(0) + 'M'
+                (Number(revenueData?.thisQuarterRevenue ?? 0) / 1000000).toFixed(0) + 'M'
               }
-              detail={`Cập nhật: ${currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${currentTime.toLocaleDateString('vi-VN')}`}
-              detailColor="text-gray-400"
+              detail={`Tăng trưởng: ${Number(revenueData?.quarterGrowthPercent ?? 0) >= 0 ? '+' : ''}${Number(revenueData?.quarterGrowthPercent ?? 0).toFixed(1)}%`}
+              detailColor={Number(revenueData?.quarterGrowthPercent ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}
             />
           </>
         )}
@@ -246,14 +254,23 @@ const AdminDashboard = () => {
             </h3>
           </div>
           <div className="space-y-5">
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
               <div>
-                <p className="text-sm text-[#4f5562]">Tổng doanh thu</p>
-                <p className="text-xl font-bold text-green-700">
-                  {formatCurrency(Number(revenueData?.totalRevenue ?? 0))}
+                <p className="text-sm text-[#4f5562]">Quý trước</p>
+                <p className="text-xl font-bold text-gray-700">
+                  {formatCurrency(Number(revenueData?.lastQuarterRevenue ?? 0))}
                 </p>
               </div>
-              <DollarSignIcon className="text-green-600" size={28} />
+              <CalendarIcon className="text-gray-400" size={28} />
+            </div>
+            <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl">
+              <div>
+                <p className="text-sm text-[#4f5562]">Quý này</p>
+                <p className="text-xl font-bold text-indigo-700">
+                  {formatCurrency(Number(revenueData?.thisQuarterRevenue ?? 0))}
+                </p>
+              </div>
+              <TrendingUpIcon className="text-indigo-600" size={28} />
             </div>
             <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
               <div>
@@ -264,18 +281,9 @@ const AdminDashboard = () => {
               </div>
               <TrendingUpIcon className="text-red-600" size={28} />
             </div>
-            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl">
-              <div>
-                <p className="text-sm text-[#4f5562]">Tháng trước</p>
-                <p className="text-xl font-bold text-purple-700">
-                  {formatCurrency(Number(revenueData?.lastMonthRevenue ?? 0))}
-                </p>
-              </div>
-              <CalendarIcon className="text-purple-600" size={28} />
-            </div>
             <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl">
               <div>
-                <p className="text-sm text-[#4f5562]">Tăng trưởng</p>
+                <p className="text-sm text-[#4f5562]">Tăng trưởng tháng</p>
                 <p
                   className={`text-xl font-bold ${Number(revenueData?.growthPercent ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}
                 >
@@ -301,8 +309,22 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-bold text-[#222]">
               Xu hướng doanh thu
             </h3>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-4">
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setRevenueView('month')}
+                  className={`px-3 py-1.5 text-xs rounded-md transition ${revenueView === 'month' ? 'bg-white shadow-sm text-red-600 font-bold' : 'text-gray-500'}`}
+                >
+                  Tháng
+                </button>
+                <button
+                  onClick={() => setRevenueView('quarter')}
+                  className={`px-3 py-1.5 text-xs rounded-md transition ${revenueView === 'quarter' ? 'bg-white shadow-sm text-red-600 font-bold' : 'text-gray-500'}`}
+                >
+                  Quý
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 text-sm">
                 <span className="w-3 h-3 bg-[#d90f0f] rounded-full"></span>
                 <span className="text-[#4f5562]">Doanh thu</span>
               </div>
@@ -310,7 +332,13 @@ const AdminDashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.revenueByMonth || []}>
+              <AreaChart
+                data={
+                  revenueView === 'month'
+                    ? stats?.revenueByMonth || []
+                    : stats?.revenueByQuarter || []
+                }
+              >
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#d90f0f" stopOpacity={0.1} />
@@ -323,12 +351,14 @@ const AdminDashboard = () => {
                   stroke="#f0f0f0"
                 />
                 <XAxis
-                  dataKey="month"
+                  dataKey={revenueView === 'month' ? 'month' : 'quarter'}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 12 }}
                   dy={10}
-                  tickFormatter={(val) => `Tháng ${val}`}
+                  tickFormatter={(val) =>
+                    revenueView === 'month' ? `Tháng ${val}` : val
+                  }
                 />
                 <YAxis
                   axisLine={false}
@@ -343,7 +373,9 @@ const AdminDashboard = () => {
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   }}
                   formatter={(val) => [formatCurrency(val), 'Doanh thu']}
-                  labelFormatter={(val) => `Tháng ${val}`}
+                  labelFormatter={(val) =>
+                    revenueView === 'month' ? `Tháng ${val}` : val
+                  }
                 />
                 <Area
                   type="monotone"
@@ -361,11 +393,11 @@ const AdminDashboard = () => {
         {/* Order Status Distribution */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_10px_30px_rgba(13,22,39,0.06)] border border-[#f0f0f0]">
           <h3 className="text-lg font-bold text-[#222] mb-8">Tỷ lệ đơn hàng</h3>
-          <div className="h-[250px] w-full">
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={statusData}
+                  data={statusDataWithPercent}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -373,7 +405,7 @@ const AdminDashboard = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {statusData.map((entry, index) => (
+                  {statusDataWithPercent.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -386,6 +418,10 @@ const AdminDashboard = () => {
                     border: 'none',
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   }}
+                  formatter={(value, name, props) => [
+                    `${value} đơn (${props.payload?.percent || 0}%)`,
+                    name,
+                  ]}
                 />
                 <Legend
                   layout="horizontal"
@@ -395,12 +431,6 @@ const AdminDashboard = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            <p className="text-sm text-[#4f5562] flex items-center justify-between">
-              <span>Năng suất trung bình:</span>
-              <span className="font-semibold text-green-600">85%</span>
-            </p>
           </div>
         </div>
       </div>

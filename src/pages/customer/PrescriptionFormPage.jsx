@@ -50,6 +50,7 @@ const PrescriptionFormPage = () => {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isAiUsed, setIsAiUsed] = useState(false);
 
   const handleScanWithAI = async () => {
     if (!uploadFile) {
@@ -136,6 +137,7 @@ const PrescriptionFormPage = () => {
           note: data.note || prev.note,
         }));
         toast.success('Trợ lý AI đã gợi ý thông số cho bạn!');
+        setIsAiUsed(true);
         setIsChatModalOpen(false);
         setChatMessage('');
       }
@@ -152,18 +154,22 @@ const PrescriptionFormPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!uploadFile) {
-      toast.error('Vui lòng tải ảnh đơn kính lên!');
+    
+    // Nếu chưa có file và cũng chưa dùng AI chat thì mới bắt buộc
+    if (!uploadFile && !isAiUsed) {
+      toast.error('Vui lòng tải ảnh đơn kính hoặc sử dụng trợ lý AI!');
       return;
     }
     try {
-      // 1. Upload prescription image
+      // 1. Upload prescription image (if exists)
       let imageUrl = '';
-      try {
-        imageUrl = await uploadRequest.uploadImage(uploadFile, 'prescriptions');
-      } catch {
-        toast.error('Lỗi tải ảnh lên, vui lòng thử lại');
-        return;
+      if (uploadFile) {
+        try {
+          imageUrl = await uploadRequest.uploadImage(uploadFile, 'prescriptions');
+        } catch {
+          toast.error('Lỗi tải ảnh lên, vui lòng thử lại');
+          return;
+        }
       }
 
       // 2. Add product to cart
@@ -351,11 +357,11 @@ const PrescriptionFormPage = () => {
                 {/* UPLOAD */}
                 <div className="bg-white rounded-3xl shadow p-6">
                   <h3 className="font-semibold mb-4">
-                    Tải ảnh đơn kính <span className="text-red-500">*</span>
+                    Tải ảnh đơn kính {!isAiUsed && <span className="text-red-500">*</span>}
                   </h3>
 
                   <div
-                    className={`border-2 border-dashed rounded-xl p-8 text-center hover:bg-gray-50 ${!uploadFile ? 'border-red-300' : 'border-green-300'}`}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center hover:bg-gray-50 ${(!uploadFile && !isAiUsed) ? 'border-red-300' : 'border-green-300'}`}
                   >
                     <input
                       type="file"
@@ -377,6 +383,8 @@ const PrescriptionFormPage = () => {
                         <p className="text-xs text-green-600 mt-3">
                           ✓ {uploadFile.name}
                         </p>
+                      ) : isAiUsed ? (
+                        <p className="text-xs text-blue-600 mt-3">Đã sử dụng gợi ý từ AI Chat</p>
                       ) : (
                         <p className="text-xs text-red-500 mt-3">Bắt buộc *</p>
                       )}

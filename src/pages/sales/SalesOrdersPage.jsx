@@ -195,7 +195,7 @@ const SalesOrdersPage = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {[
           {
             label: 'Chờ xác nhận',
@@ -224,6 +224,13 @@ const SalesOrdersPage = () => {
             icon: TrendingUp,
             color: 'text-green-600',
             bg: 'bg-green-50',
+          },
+          {
+            label: 'Trả hàng',
+            val: allOrders.filter((o) => o.status === 'RETURN_REQUESTED').length,
+            icon: XCircle,
+            color: 'text-orange-600',
+            bg: 'bg-orange-50',
           },
           {
             label: 'Tổng đơn',
