@@ -199,6 +199,8 @@ const ProfilePage = () => {
       SHIPPED: { label: 'Đang giao', class: 'bg-orange-100 text-orange-800' },
       DELIVERED: { label: 'Hoàn thành', class: 'bg-green-100 text-green-800' },
       CANCELLED: { label: 'Đã hủy', class: 'bg-red-100 text-red-800' },
+      RETURN_REQUESTED: { label: 'Đang trả hàng', class: 'bg-orange-100 text-orange-800' },
+      RETURNED: { label: 'Đã trả hàng', class: 'bg-purple-100 text-purple-800' },
     };
     const info = statusMap[s] || {
       label: status,
@@ -402,7 +404,9 @@ const ProfilePage = () => {
                               <div className="flex items-center gap-2 overflow-x-auto pb-2">
                                 {orderSteps.map((step, index) => {
                                   const orderStatusIndex =
-                                    orderSteps.indexOf(orderStatus);
+                                    orderStatus === 'RETURNED' || orderStatus === 'RETURN_REQUESTED' 
+                                      ? 4 // Mark all steps up to DELIVERED as completed
+                                      : orderSteps.indexOf(orderStatus);
                                   const isCompleted = orderStatusIndex >= index;
                                   return (
                                     <div
@@ -732,6 +736,20 @@ const ProfilePage = () => {
                             </span>
                           </div>
                         </div>
+
+                        {selectedOrder.status === 'DELIVERED' && (
+                          <div className="pt-6 flex justify-center">
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(null);
+                                navigate(`/return-request?orderId=${selectedOrder.orderId}`);
+                              }}
+                              className="bg-[#d90f0f] text-white px-8 py-3 rounded-full font-bold hover:bg-[#0d1322] transition w-full shadow-lg shadow-red-100"
+                            >
+                              Yêu cầu đổi trả hàng
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

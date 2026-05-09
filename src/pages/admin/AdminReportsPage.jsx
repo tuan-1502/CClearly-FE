@@ -1,4 +1,4 @@
-﻿// Admin Reports Page - Báo cáo cho System Admin
+// Admin Reports Page - Báo cáo cho System Admin
 import {
   TrendingUp,
   TrendingDown,
@@ -45,6 +45,7 @@ const AdminReportsPage = () => {
 
   const [filterDays, setFilterDays] = useState(7);
   const [showFilter, setShowFilter] = useState(false);
+  const [revenueView, setRevenueView] = useState('month'); // 'month' or 'quarter'
   const filterRef = useRef(null);
 
   const { data: revenueData, isLoading: loadingRevenue } = useAdminRevenue({
@@ -83,19 +84,26 @@ const AdminReportsPage = () => {
 
   const statusData = stats?.ordersByStatus
     ? Object.entries(stats.ordersByStatus).map(([name, value]) => ({
-        name:
-          name === 'PENDING'
-            ? 'Chờ xử lý'
-            : name === 'PROCESSING'
-              ? 'Đang gia công'
-              : name === 'DELIVERED'
-                ? 'Hoàn thành'
-                : name === 'CANCELLED'
-                  ? 'Đã hủy'
-                  : name,
-        value,
-      }))
+      name:
+        name === 'PENDING'
+          ? 'Chờ xử lý'
+          : name === 'PROCESSING'
+            ? 'Đang gia công'
+            : name === 'DELIVERED'
+              ? 'Hoàn thành'
+              : name === 'CANCELLED'
+                ? 'Đã hủy'
+                : name,
+      value,
+    }))
     : [];
+
+  const totalOrdersForPie = statusData.reduce((acc, curr) => acc + curr.value, 0);
+
+  const statusDataWithPercent = statusData.map(item => ({
+    ...item,
+    percent: totalOrdersForPie > 0 ? ((item.value / totalOrdersForPie) * 100).toFixed(1) : 0
+  }));
 
   const revenueByDay = revenueData?.revenueByDay || [];
 
@@ -140,11 +148,10 @@ const AdminReportsPage = () => {
                     setFilterDays(opt.value);
                     setShowFilter(false);
                   }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition ${
-                    filterDays === opt.value
+                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition ${filterDays === opt.value
                       ? 'bg-blue-50 text-[#d90f0f] font-semibold'
                       : 'text-[#222]'
-                  }`}
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -158,10 +165,10 @@ const AdminReportsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           icon={<DollarSign className="text-green-600" />}
-          title="Doanh thu tháng này"
-          value={formatCurrency(Number(revenueData?.thisMonthRevenue ?? 0))}
-          trend={`${Number(revenueData?.growthPercent ?? 0) >= 0 ? '+' : ''}${Number(revenueData?.growthPercent ?? 0).toFixed(1)}%`}
-          isUp={Number(revenueData?.growthPercent ?? 0) >= 0}
+          title="Doanh thu quý này"
+          value={formatCurrency(Number(revenueData?.thisQuarterRevenue ?? 0))}
+          trend={`${Number(revenueData?.quarterGrowthPercent ?? 0) >= 0 ? '+' : ''}${Number(revenueData?.quarterGrowthPercent ?? 0).toFixed(1)}%`}
+          isUp={Number(revenueData?.quarterGrowthPercent ?? 0) >= 0}
           bgColor="bg-green-50"
         />
         <KPICard
@@ -258,8 +265,22 @@ const AdminReportsPage = () => {
             <h3 className="text-lg font-bold text-[#222]">
               Xu hướng doanh thu
             </h3>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-4">
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setRevenueView('month')}
+                  className={`px-3 py-1.5 text-xs rounded-md transition ${revenueView === 'month' ? 'bg-white shadow-sm text-red-600 font-bold' : 'text-gray-500'}`}
+                >
+                  Tháng
+                </button>
+                <button
+                  onClick={() => setRevenueView('quarter')}
+                  className={`px-3 py-1.5 text-xs rounded-md transition ${revenueView === 'quarter' ? 'bg-white shadow-sm text-red-600 font-bold' : 'text-gray-500'}`}
+                >
+                  Quý
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 text-sm">
                 <span className="w-3 h-3 bg-[#d90f0f] rounded-full"></span>
                 <span className="text-[#4f5562]">Doanh thu</span>
               </div>
@@ -267,7 +288,13 @@ const AdminReportsPage = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.revenueByMonth || []}>
+              <AreaChart
+                data={
+                  revenueView === 'month'
+                    ? stats?.revenueByMonth || []
+                    : stats?.revenueByQuarter || []
+                }
+              >
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#d90f0f" stopOpacity={0.1} />
@@ -280,12 +307,14 @@ const AdminReportsPage = () => {
                   stroke="#f0f0f0"
                 />
                 <XAxis
-                  dataKey="month"
+                  dataKey={revenueView === 'month' ? 'month' : 'quarter'}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 12 }}
                   dy={10}
-                  tickFormatter={(val) => `Tháng ${val}`}
+                  tickFormatter={(val) =>
+                    revenueView === 'month' ? `Tháng ${val}` : val
+                  }
                 />
                 <YAxis
                   axisLine={false}
@@ -300,7 +329,9 @@ const AdminReportsPage = () => {
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   }}
                   formatter={(val) => [formatCurrency(val), 'Doanh thu']}
-                  labelFormatter={(val) => `Tháng ${val}`}
+                  labelFormatter={(val) =>
+                    revenueView === 'month' ? `Tháng ${val}` : val
+                  }
                 />
                 <Area
                   type="monotone"
@@ -318,7 +349,7 @@ const AdminReportsPage = () => {
         {/* Order Status Distribution */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_10px_30px_rgba(13,22,39,0.06)] border border-[#f0f0f0]">
           <h3 className="text-lg font-bold text-[#222] mb-8">Tỷ lệ đơn hàng</h3>
-          <div className="h-[250px] w-full">
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -329,8 +360,10 @@ const AdminReportsPage = () => {
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  labelLine={true}
                 >
-                  {statusData.map((entry, index) => (
+                  {statusDataWithPercent.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -343,6 +376,10 @@ const AdminReportsPage = () => {
                     border: 'none',
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   }}
+                  formatter={(value, name, props) => [
+                    `${value} đơn (${props.payload?.percent || 0}%)`,
+                    name,
+                  ]}
                 />
                 <Legend
                   layout="horizontal"
@@ -352,12 +389,6 @@ const AdminReportsPage = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            <p className="text-sm text-[#4f5562] flex items-center justify-between">
-              <span>Năng suất trung bình:</span>
-              <span className="font-semibold text-green-600">85%</span>
-            </p>
           </div>
         </div>
       </div>
@@ -410,14 +441,23 @@ const AdminReportsPage = () => {
             </h3>
           </div>
           <div className="space-y-5">
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
               <div>
-                <p className="text-sm text-[#4f5562]">Tổng doanh thu</p>
-                <p className="text-xl font-bold text-green-700">
-                  {formatCurrency(Number(revenueData?.totalRevenue ?? 0))}
+                <p className="text-sm text-[#4f5562]">Quý trước</p>
+                <p className="text-xl font-bold text-gray-700">
+                  {formatCurrency(Number(revenueData?.lastQuarterRevenue ?? 0))}
                 </p>
               </div>
-              <DollarSign className="text-green-600" size={28} />
+              <Calendar className="text-gray-400" size={28} />
+            </div>
+            <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl">
+              <div>
+                <p className="text-sm text-[#4f5562]">Quý này</p>
+                <p className="text-xl font-bold text-indigo-700">
+                  {formatCurrency(Number(revenueData?.thisQuarterRevenue ?? 0))}
+                </p>
+              </div>
+              <TrendingUp className="text-indigo-600" size={28} />
             </div>
             <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
               <div>
@@ -439,7 +479,7 @@ const AdminReportsPage = () => {
             </div>
             <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl">
               <div>
-                <p className="text-sm text-[#4f5562]">Tăng trưởng</p>
+                <p className="text-sm text-[#4f5562]">Tăng trưởng tháng</p>
                 <p
                   className={`text-xl font-bold ${Number(revenueData?.growthPercent ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}
                 >

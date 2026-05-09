@@ -1,6 +1,7 @@
-﻿// Return & Complaint Page
+// Return & Complaint Page
 import { Lock, CheckCircle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserOrders, useRequestReturn } from '@/hooks/useOrder';
 
@@ -8,13 +9,22 @@ const ReturnPage = () => {
   const { isAuthenticated } = useAuth();
   const { data: orders = [], isLoading } = useUserOrders();
   const requestReturnMutation = useRequestReturn();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
-    orderId: '',
+    orderId: searchParams.get('orderId') || '',
     type: 'return',
     reason: '',
     description: '',
   });
   const [submitted, setSubmitted] = useState(false);
+
+  // Update orderId if URL param changes
+  useEffect(() => {
+    const orderIdParam = searchParams.get('orderId');
+    if (orderIdParam) {
+      setFormData(prev => ({ ...prev, orderId: orderIdParam }));
+    }
+  }, [searchParams]);
 
   if (!isAuthenticated) {
     return (
